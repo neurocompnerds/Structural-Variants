@@ -19,9 +19,7 @@
 usage()
 {
 echo "# Script for identifying retrotransposed elements in an aligned genome using RetroSeq pipeline
-# Example usage:
-# INDIR=/data/neurogenetics/alignments/Illumina/genomes/allGenomes ALIGNID=80 sbatch --array 0-159 retroseq.sh
-# Usually set to n 16 cores, time 1 day, mem 8GB
+# A genome usually requires 16 cores and time 1 day, mem 8GB
 #
 # Usage sbatch --array 0-(# of bam files minus 1) $0 -i /path/to/input [-a percent-align-identity -o /path/to/output -g /path/to/genome.fa -r /path/to/repeatsDir ] | [ - h | --help ]
 #
@@ -76,14 +74,17 @@ if [ -z "$INDIR" ]; then # If no input directory specified then do not proceed
         echo "#ERROR: You need to tell me where to find some bam files to run the script on are."
         exit 1
 fi
-if [ -z "$ALIGNID" ]; then # If no SAMPLE name specified then do not proceed
+if [ -z "$ALIGNID" ]; then # If no alignment minimum match percentage specified use the default
         ALIGNID=80
 fi
-if [ -z "$OUTDIR" ]; then # If no SAMPLE name specified then do not proceed
+if [ -z "$OUTDIR" ]; then # If no output directory then use the default
         OUTDIR=$FASTDIR/retroseq
 fi
-if [ -z "$GENOME" ]; then # If no output directory then use current directory
+if [ -z "$GENOME" ]; then # If no genome specified then use the default
         GENOME=/data/neurogenetics/RefSeq/ucsc.hg19.fasta
+fi
+if [ -z "$REPEATSDIR" ]; then # If no repeat directory then use the default
+        REPEATSDIR=/data/neurogenetics/RefSeq/repeats
 fi
 
 if [ ! -d $OUTDIR ]; then
@@ -93,7 +94,7 @@ fi
 BUILD=$(basename $GENOME)
 
 # define query bam files
-mapfile QUERIES < <(find $INDIR/*.bam)
+mapfile -t QUERIES < <(find $INDIR/*.bam | xargs -n1 basename)
 
 # Do a little summary for the log file
 echo "
@@ -102,6 +103,7 @@ echo "
 # Outputs can be found here: $OUTDIR
 # Minimum match percentage: $ALIGNID %
 # Genome: $BUILD (If you have problems with the output make sure this reference matches the BAM file)
+# Repeat library: $REPEATSDIR
 "
 # load modules
 module load Exonerate/2.2.0-foss-2016uofa
@@ -116,8 +118,7 @@ $RETROSEQEXE -discover \
 -bam ${INDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
 -output ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab \
 -eref ${REPEATSDIR}/eref_types.tab \
--align -id ${ALIGNID} \
-2> ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log
+-align -id ${ALIGNID} > ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
 echo "done"
 
 ### filtering ###
@@ -133,9 +134,8 @@ $RETROSEQEXE -call \
 -bam ${INDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
 -input ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab.filtered \
 -ref ${GENOME} \
--output ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf \
-2> ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log
+-output ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf >> ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
 echo "done"
 
-# Collect the log file
+# Collect the slurm log file
 mv $FASTDIR/retroseq-slurm-$SLURM_JOB_ID.out $OUTDIR/
