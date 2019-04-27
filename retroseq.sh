@@ -90,6 +90,10 @@ fi
 if [ ! -d $OUTDIR ]; then
         mkdir -p $OUTDIR
 fi
+if [ ! -d $OUTDIR/TEdiscovery ]; then
+        mkdir -p $OUTDIR/TEdiscovery
+        mkdir -p $OUTDIR/TEcalling
+fi
 
 BUILD=$(basename $GENOME)
 
@@ -136,6 +140,9 @@ $RETROSEQEXE -call \
 -ref ${GENOME} \
 -output ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf >> ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
 echo "done"
+
+module load HTSlib/1.9-foss-2016b
+bgzip ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf && tabix ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf.gz
 
 # Collect the slurm log file
 mv $FASTDIR/retroseq-slurm-$SLURM_JOB_ID.out $OUTDIR/
