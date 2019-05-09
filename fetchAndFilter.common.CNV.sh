@@ -16,4 +16,4 @@ awk -F"\t" '$20/$18 > 0.01 && $18 > 200 {print}' dgvMerged.txt | grep -v \# | cu
 awk -F"\t" '$19/$18 > 0.01 && $18 > 200 {print}' dgvMerged.txt | grep -v \# | cut -f2,3,4 | sort -k1,1 -k2,2n | bedtools merge -i stdin > common.DGV.dups.gt200.fq0.01.hg19.bed
 sed 's/^chr//g' common.DGV.dels.gt200.fq0.01.hg19.bed > common.DGV.dels.gt200.fq0.01.b37.bed
 sed 's/^chr//g' common.DGV.dups.gt200.fq0.01.hg19.bed > common.DGV.dups.gt200.fq0.01.b37.bed
-gzip dgvMerged.txt.gz
+gzip dgvMerged.txt
