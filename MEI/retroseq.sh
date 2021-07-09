@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J retroseq
-#SBATCH -o /fast/users/%u/retroseq-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/retroseq-slurm-%j.out
 
 #SBATCH -A robinson
 #SBATCH -p batch
@@ -16,19 +16,22 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # define key variables
+neuroDir=/hpcfs/groups/phoenix-hpc-neurogenetics
+retroseqScript=$neuroDir/executables/RetroSeq/bin/retroseq.pl
+modList=("arch/haswell" "Exonerate/2.2.0-foss-2016uofa" "BEDTools/2.25.0-GCC-5.3.0-binutils-2.25" "SAMtools/0.1.19-GCC-5.3.0-binutils-2.25")
 usage()
 {
-echo "# Script for identifying retrotransposed elements in an aligned genome using RetroSeq pipeline
-# A genome usually requires 16 cores and time 1 day, mem 8GB
+echo "# Script for identifying retrotransposed elements in an aligned Genome using RetroSeq pipeline
+# A Genome usually requires 16 cores and time 1 day, mem 8GB
 #
-# Usage sbatch --array 0-(# of bam files minus 1) $0 -i /path/to/input [-a percent-align-identity -o /path/to/output -g /path/to/genome.fa -r /path/to/repeatsDir ] | [ - h | --help ]
+# Usage sbatch --array 0-(# of bam files minus 1) $0 -i /path/to/input [-a percent-align-identity -o /path/to/output -g /path/to/Genome.fa -r /path/to/repeatsDir ] | [ - h | --help ]
 #
 # Options
 # -i    REQUIRED. Location of your bam files to run retroseq on
 # -a	OPTIONAL. Equivalent to RetroSeq -id option (NOTE: program default is 90 but default for this script is 80)
-# -o    OPTIONAL. Path to where you want to find your file output (if not specified $FASTDIR/retroseq is used)
-# -g    OPTIONAL. Path to your reference genome (if not specified /data/neurogenetics/RefSeq/ucsc.hg19.fasta is used)
-# -r    OPTIONAL. Path to where repeats fasta files are (if not specified /data/neurogenetics/RefSeq/repeats is used)
+# -o    OPTIONAL. Path to where you want to find your file output (if not specified /hpcfs/users/${USER}/retroseq is used)
+# -g    OPTIONAL. Path to your reference Genome (if not specified $neuroDir/RefSeq/ucsc.hg19.fasta is used)
+# -r    OPTIONAL. Path to where repeats fasta files are (if not specified $neuroDir/RefSeq/repeats is used)
 # -h or --help  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 #
 #
@@ -39,26 +42,24 @@ echo "# Script for identifying retrotransposed elements in an aligned genome usi
 "
 }
 
-## Set default program location
-RETROSEQEXE=/data/neurogenetics/executables/RetroSeq/bin/retroseq.pl
 
 ## Set Variables ##
 while [ "$1" != "" ]; do
         case $1 in
                 -i )                    shift
-                                        INDIR=$1
+                                        inputDir=$1
                                         ;;
                 -a )                    shift
-                                        ALIGNID=$1
+                                        pctAlignId=$1
                                         ;;
                 -o )                    shift
-                                        OUTDIR=$1
+                                        outputDir=$1
                                         ;;
                 -g )                    shift
-                                        GENOME=$1
+                                        Genome=$1
                                         ;;
                 -r )                    shift
-                                        REPEATSDIR=$1
+                                        repeatsDir=$1
                                         ;;
                 -h | --help )           usage
                                         exit 0
@@ -69,80 +70,80 @@ while [ "$1" != "" ]; do
         shift
 done
 
-if [ -z "$INDIR" ]; then # If no input directory specified then do not proceed
-        usage
-        echo "#ERROR: You need to tell me where to find some bam files to run the script on are."
-        exit 1
+if [ -z "$inputDir" ]; then # If no input directory specified then do not proceed
+    usage
+    echo "## ERROR: You need to tell me where to find some bam files to run the script on are."
+    exit 1
 fi
-if [ -z "$ALIGNID" ]; then # If no alignment minimum match percentage specified use the default
-        ALIGNID=80
+if [ -z "$pctAlignId" ]; then # If no alignment minimum match percentage specified use the default
+    pctAlignId=80
 fi
-if [ -z "$OUTDIR" ]; then # If no output directory then use the default
-        OUTDIR=$FASTDIR/retroseq
+if [ -z "$outputDir" ]; then # If no output directory then use the default
+    outputDir=/hpcfs/users/${USER}/retroseq
+    echo "## INFO: No output directory was specified so the default $outputDir will be used."
 fi
-if [ -z "$GENOME" ]; then # If no genome specified then use the default
-        GENOME=/data/neurogenetics/RefSeq/ucsc.hg19.fasta
+if [ -z "$Genome" ]; then # If no Genome specified then use the default
+    Genome=$neuroDir/RefSeq/ucsc.hg19.fasta
 fi
-if [ -z "$REPEATSDIR" ]; then # If no repeat directory then use the default
-        REPEATSDIR=/data/neurogenetics/RefSeq/repeats
-fi
-
-if [ ! -d $OUTDIR ]; then
-        mkdir -p $OUTDIR
-fi
-if [ ! -d $OUTDIR/TEdiscovery ]; then
-        mkdir -p $OUTDIR/TEdiscovery
-        mkdir -p $OUTDIR/TEcalling
+if [ -z "$repeatsDir" ]; then # If no repeat directory then use the default
+        repeatsDir=$neuroDir/RefSeq/repeats
 fi
 
-BUILD=$(basename $GENOME)
+if [ ! -d $outputDir ]; then
+        mkdir -p $outputDir
+fi
+if [ ! -d $outputDir/TEdiscovery ]; then
+        mkdir -p $outputDir/TEdiscovery
+        mkdir -p $outputDir/TEcalling
+fi
+
+BUILD=$(basename $Genome)
 
 # define query bam files
-mapfile -t QUERIES < <(find $INDIR/*.bam | xargs -n1 basename)
+mapfile -t QUERIES < <(find $inputDir/*.bam | xargs -n1 basename)
 
 # Do a little summary for the log file
 echo "
 # Running Retroseq with the following parameters
-# File: ${INDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]} 
-# Outputs can be found here: $OUTDIR
-# Minimum match percentage: $ALIGNID %
+# File: ${inputDir}/${QUERIES[$SLURM_ARRAY_TASK_ID]} 
+# Outputs can be found here: $outputDir
+# Minimum match percentage: $pctAlignId %
 # Genome: $BUILD (If you have problems with the output make sure this reference matches the BAM file)
-# Repeat library: $REPEATSDIR
+# Repeat library: $repeatsDir
 "
 # load modules
-module load Exonerate/2.2.0-foss-2016uofa
-module load BEDTools/2.25.0-GCC-5.3.0-binutils-2.25
-module load SAMtools/0.1.19-GCC-5.3.0-binutils-2.25
 
 # run pipeline
 
 ### discovery phase ###
 echo "discovering..."
-$RETROSEQEXE -discover \
--bam ${INDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
--output ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab \
--eref ${REPEATSDIR}/eref_types.tab \
--align -id ${ALIGNID} > ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
+
+retroseqScript -discover \
+-bam ${inputDir}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
+-output ${outputDir}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab \
+-eref ${repeatsDir}/eref_types.tab \
+-align -id ${pctAlignId} > ${outputDir}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
 echo "done"
 
 ### filtering ###
 # filter out candidates near contig starts (likely contamination)
 echo "filtering contigs..."
-awk -F"\t" '{if ($2>1000) print}' ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab \
-> ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab.filtered
+awk -F"\t" '{if ($2>1000) print}' ${outputDir}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab \
+> ${outputDir}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab.filtered
 echo "done"
 
 ### calling phase ###
 echo "calling..."
-$RETROSEQEXE -call \
--bam ${INDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
--input ${OUTDIR}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab.filtered \
--ref ${GENOME} \
--output ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf >> ${OUTDIR}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
+
+retroseqScript -call \
+-bam ${inputDir}/${QUERIES[$SLURM_ARRAY_TASK_ID]} \
+-input ${outputDir}/TEdiscovery/${QUERIES[$SLURM_ARRAY_TASK_ID]}.candidates.tab.filtered \
+-ref ${Genome} \
+-output ${outputDir}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf >> ${outputDir}/${QUERIES[$SLURM_ARRAY_TASK_ID]}.log 2>&1
 echo "done"
 
 module load HTSlib/1.9-foss-2016b
-bgzip ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf && tabix ${OUTDIR}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf.gz
+bgzip ${outputDir}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf && tabix ${outputDir}/TEcalling/${QUERIES[$SLURM_ARRAY_TASK_ID]}.vcf.gz
 
 # Collect the slurm log file
-mv $FASTDIR/retroseq-slurm-$SLURM_JOB_ID.out $OUTDIR/
+mv /hpcfs/users/${USER}/retroseq-slurm-$SLURM_JOB_ID.out $outputDir/

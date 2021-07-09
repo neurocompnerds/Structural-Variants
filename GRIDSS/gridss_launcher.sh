@@ -1,89 +1,93 @@
 #!/bin/bash
-# Example from github - to be fixed for our hardware
+# This is the master script that coordinates job submission for the neurogenetics GRIDSS structural variant pipeline.
+## Set hard-coded paths and define functions ##
+scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
+logDir="/hpcfs/users/${USER}/log"
 
-base_dir=/path/to/project/
-ref=$base_dir/ref/reference_genome.fa
-working_dir=$base_dir/working
-inputs="$base_dir/input1.bam $base_dir/input2.bam $base_dir/input3.bam"
-inputarr=($inputs)
-sample_name=example_torque
-job_prefix=gridss_${sample_name}
+if [ ! -d "${logDir}" ]; then
+    mkdir -p ${logDir}
+    echo "## INFO: New log directory created, you'll find all of the log information from this pipeline here: ${logDir}"
+fi
 
-mkdir -p $working_dir
-cat > $working_dir/gridss.properties << EOF
-# The default chunk size of 10Mb only gives ~300 units of work
-# reducing to 1Mb gives ~3000 which gives a more even distribution
-# of work across jobs
-chunkSize=1000000
-chunkSequenceChangePenalty=100000
-EOF
-
+usage()
+{
+echo "# This is the master script that coordinates job submission for analysis of one or many Illumina whole genomes using GRIDSS.
+# The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
+# Requires: An aligned BAM file, samtools, Java 
 #
-# WARNING: assumes GRIDSS setupreference has already been run
+# Usage $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
+# Options
+# -p	REQUIRED. A prefix to your sequence files of the form PREFIX_R1.fastq.gz 
+# -i	REQUIRED. Path to the sequence files
+# -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.  The config contains all of the stuff that used to be set in the top part of our scripts
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/BWA-GATK/\${Sample} is used)
+# -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
+# 
+# Original: Mark Corbett, 06/07/2021 
+# Modified: (Date; Name; Description)
+# 
+# 
+"
+}
 
-# Assumes gridss.sh release artifacts are in $base_dir
-gridss_cmd_common="$base_dir/gridss.sh \
-	-r $ref \
-	-o $base_dir/$sample_name.sv.vcf \
-	-a $base_dir/$sample_name.asm.bam \
-	-j $base_dir/gridss-2.6.3-gridss-jar-with-dependencies.jar \
-	-w $working_dir \
-	-c $working_dir/gridss.properties"
+## Set Variables ##
+while [ "$1" != "" ]; do
+    case $1 in
+        -c )            shift
+                        Config=$1
+                        ;;
+        -p )            shift
+                        outPrefix=$1
+                        ;;
+        -i )            shift
+                        inputDir=$1
+                        ;;
+        -o )            shift
+                        workDir=$1
+                        ;;
+        -h | --help )   usage
+                        exit 0
+                        ;;
+        * )             usage
+                        exit 1
+    esac
+    shift
+done
 
-# Create a job array for each input file
-threads=8
-cat > $working_dir/${job_prefix}_preprocess.sh << EOF
-#!/bin/bash
-#PBS -N ${job_prefix}_preprocess
-##PBS -o ${job_prefix}_preprocess
-#PBS -t 1-${#inputarr[@]}
-#PBS -l nodes=1:ppn=$threads,mem=16gb,walltime=144:00:0
-#PBS -j oe
-module add bwa samtools R java
-inputarr=($inputs)
-cd $working_dir
-$gridss_cmd_common -t $threads \
-	-s preprocess \
-	\${inputarr[\$((PBS_ARRAYID -1 ))]}
-EOF
+## Pre-flight checks ##
+if [ -z "$Config" ]; then # If no config file specified use the default
+    Config=$scriptDir/configs/hs38DH.SV_GRIDSS.phoenix.cfg
+    echo "## INFO: Using the default config ${Config}"
+fi
+source $Config
+if [ -z "${outPrefix}" ]; then # If no file prefix specified then do not proceed
+    usage
+    echo "## ERROR: You need to specify a file prefix (PREFIX) referring to your BAM files eg. PREFIX*.bam."
+    exit 1
+fi
+if [ -z "$inputDir" ]; then # If path to bam file not specified then do not proceed
+	usage
+	echo "## ERROR: You need to specify the path to your bam files"
+	exit 1
+fi
+# Locate the bam
+bamFile=$(find $inputDir/*.bam | grep $outPrefix)
+if [ ! -f "$bamFile" ]; then
+    echo "## ERROR: BAM file not found in $inputDir"
+    exit 1
+fi 
+if [ -z "$workDir" ]; then # If no output directory then set and create a default directory
+	workDir=/hpcfs/users/${USER}/BWA-GATKHC/$Sample
+	echo "## INFO: Using $workDir as the output directory"
+fi
+if [ ! -d "$workDir" ]; then
+	mkdir -p $workDir
+fi
 
-# Create a job array containing assembly jobs
-assembly_jobs=32
-cat > $working_dir/${job_prefix}_assembly.sh << EOF
-#!/bin/bash
-#PBS -N ${job_prefix}_assembly
-##PBS -o ${job_prefix}_assembly
-#PBS -t 1-$assembly_jobs
-#PBS -l nodes=1:ppn=$threads,mem=30gb,walltime=144:00:0
-#PBS -j oe
-module add bwa samtools R java
-inputarr=($inputs)
-cd $working_dir
-$gridss_cmd_common -t $threads \
-	-s assemble \
-	--jobindex \$((PBS_ARRAYID -1 )) \
-	--jobnodes $assembly_jobs \
-	$inputs
-EOF
-
-# And finally, finish perform assembly gather
-# variant calling, and annotation
-threads=16
-cat > $working_dir/${job_prefix}_call.sh << EOF
-#!/bin/bash
-#PBS -N ${job_prefix}_call
-##PBS -o ${job_prefix}_call
-#PBS -l nodes=1:ppn=$threads,mem=30gb,walltime=144:00:0
-#PBS -j oe
-module add bwa samtools R java
-inputarr=($inputs)
-cd $working_dir
-$gridss_cmd_common -t $threads \
-	$inputs
-EOF
-
-# queue the jobs up with a job dependency on the previous step
-echo "pbs_id=\$(qsub $working_dir/${job_prefix}_preprocess.sh) ; echo \$pbs_id"
-echo "pbs_id=\$(qsub -W depend=afterokarray:\$pbs_id $working_dir/${job_prefix}_assembly.sh) ; echo \$pbs_id)"
-echo "qsub -W depend=afterokarray:\$pbs_id $working_dir/${job_prefix}_call.sh"
+## Launch the job chain ##
+preprocess_job=`sbatch --export=ALL $scriptDir/GRIDSS/gridss_preprocess.sh -c $Config -p $Sample -i $inputDir -o $workDir`
+preprocess_job=$(echo $preprocess_job | cut -d" " -f4)
+assembly_job=`sbatch --array=0-31 --export=ALL --dependency=afterok:${preprocess_job} $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -S $Sample -o $workDir`
+assembly_job=$(echo $assembly_job | cut -d" " -f4)
+sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -S $Sample -o $workDir
