@@ -18,10 +18,10 @@ echo "# This is the master script that coordinates job submission for analysis o
 # Usage $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
-# -p	REQUIRED. A prefix to your sequence files of the form PREFIX_R1.fastq.gz 
-# -i	REQUIRED. Path to the sequence files
+# -p	REQUIRED. A prefix to your sequence files of the form PREFIX*.bam
+# -i	REQUIRED. Path to the BAM file
 # -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.  The config contains all of the stuff that used to be set in the top part of our scripts
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/BWA-GATK/\${Sample} is used)
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/GRIDSS/\${outPrefix} is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Mark Corbett, 06/07/2021 
@@ -78,7 +78,7 @@ if [ ! -f "$bamFile" ]; then
     exit 1
 fi 
 if [ -z "$workDir" ]; then # If no output directory then set and create a default directory
-	workDir=/hpcfs/users/${USER}/BWA-GATKHC/$Sample
+	workDir=/hpcfs/users/${USER}/GRIDSS/$outPrefix
 	echo "## INFO: Using $workDir as the output directory"
 fi
 if [ ! -d "$workDir" ]; then
@@ -86,8 +86,8 @@ if [ ! -d "$workDir" ]; then
 fi
 
 ## Launch the job chain ##
-preprocess_job=`sbatch --export=ALL $scriptDir/GRIDSS/gridss_preprocess.sh -c $Config -p $Sample -i $inputDir -o $workDir`
+preprocess_job=`sbatch --export=ALL $scriptDir/GRIDSS/gridss_preprocess.sh -c $Config -p $outPrefix -i $inputDir -o $workDir`
 preprocess_job=$(echo $preprocess_job | cut -d" " -f4)
-assembly_job=`sbatch --array=0-31 --export=ALL --dependency=afterok:${preprocess_job} $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -S $Sample -o $workDir`
+assembly_job=`sbatch --array=0-31 --export=ALL --dependency=afterok:${preprocess_job} $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -S $outPrefix -o $workDir`
 assembly_job=$(echo $assembly_job | cut -d" " -f4)
-sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -S $Sample -o $workDir
+sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -S $outPrefix -o $workDir

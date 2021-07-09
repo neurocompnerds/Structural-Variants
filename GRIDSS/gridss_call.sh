@@ -31,10 +31,10 @@ echo "# This preprocesses BAM files for GRIDSS.  This script can be directly sub
 # Usage sbatch $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
-# -p	REQUIRED. A prefix to your sequence files of the form PREFIX_R1.fastq.gz 
-# -i	REQUIRED. Path to the sequence files
+# -p	REQUIRED. A prefix to your sequence files of the form PREFIX*.bam
+# -i	REQUIRED. Path to the BAM file
 # -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.  The config contains all of the stuff that used to be set in the top part of our scripts
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/BWA-GATK/\${Sample} is used)
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/GRIDSS/\${outPrefix} is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Mark Corbett, 06/07/2021 
@@ -97,7 +97,7 @@ fi
 if [ ! -d "$workDir" ]; then
     mkdir -p $workDir
 fi
-tmpDir=$baseTmpDir/$outPrefix/${SLURM_JOB_ID}
+tmpDir=$baseTmpDir/$outPrefix
 if [ ! -d "$tmpDir" ]; then
     mkdir -p $tmpDir
 fi
