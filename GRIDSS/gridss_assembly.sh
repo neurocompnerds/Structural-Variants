@@ -19,7 +19,7 @@
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
 customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
 modList=("arch/skylake" "SAMtools/1.12" "Java/1.8.0_191" "BWA/0.7.17" "R/4.0.3")
-R_LIBS_USER="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
+RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
 threads=8
 assembly_jobs=32
 
@@ -108,7 +108,7 @@ module use $customModDir
 for mod in "${modList[@]}"; do
     module load $mod
 done
-export ${R_LIBS_USER}
+export R_LIBS_USER=${RLibDir}
 
 ## Create a job array containing assembly jobs
 

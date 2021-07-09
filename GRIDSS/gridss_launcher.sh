@@ -88,6 +88,6 @@ fi
 ## Launch the job chain ##
 preprocess_job=`sbatch --export=ALL $scriptDir/GRIDSS/gridss_preprocess.sh -c $Config -p $outPrefix -i $inputDir -o $workDir`
 preprocess_job=$(echo $preprocess_job | cut -d" " -f4)
-assembly_job=`sbatch --array=0-31 --export=ALL --dependency=afterok:${preprocess_job} $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -S $outPrefix -o $workDir`
+assembly_job=`sbatch --array=0-31 --export=ALL --dependency=afterok:${preprocess_job} $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -p $outPrefix -i $inputDir -o $workDir`
 assembly_job=$(echo $assembly_job | cut -d" " -f4)
-sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -S $outPrefix -o $workDir
+sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -p $outPrefix -i $inputDir -o $workDir
