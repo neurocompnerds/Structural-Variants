@@ -18,7 +18,8 @@
 ## Set hard-coded paths and define functions ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
 logDir="/hpcfs/users/${USER}/log"
-modList=("arch/skylake" "Perl/5.28.0")
+customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
+modList=("arch/skylake" "SAMtools/1.12" "Perl/5.28.0")
 
 if [ ! -d "${logDir}" ]; then
     mkdir -p ${logDir}
@@ -102,6 +103,7 @@ if [ ! -d "$workDir" ]; then
 fi
 
 ## Load modules ##
+module use $customModDir
 for mod in "${modList[@]}"; do
     module load $mod
 done
