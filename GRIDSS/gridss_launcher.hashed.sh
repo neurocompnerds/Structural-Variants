@@ -1,34 +1,21 @@
 #!/bin/bash
-#SBATCH -J prepGRIDSS
-#SBATCH -o /hpcfs/users/%u/log/prepGRIDSS-slurm-%j.out
-
-#SBATCH -A robinson
-#SBATCH -p batch
-#SBATCH -N 1
-#SBATCH -n 10
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=16GB
-
-# Notification Configuration 
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
-#SBATCH --mail-user=${USER}@adelaide.edu.au
-
-# A script to preprocess bam files for GRIDSS
-## List modules and file paths ##
+# This is the master script that coordinates job submission for the neurogenetics GRIDSS structural variant pipeline.
+## Set hard-coded paths and define functions ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
-customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
-modList=("arch/skylake" "SAMtools/1.12" "Java/1.8.0_191" "BWA/0.7.17" "R/4.0.3")
-RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
-threads=8
+logDir="/hpcfs/users/${USER}/log"
+
+if [ ! -d "${logDir}" ]; then
+    mkdir -p ${logDir}
+    echo "## INFO: New log directory created, you'll find all of the log information from this pipeline here: ${logDir}"
+fi
 
 usage()
 {
-echo "# This preprocesses BAM files for GRIDSS.  This script can be directly submitted to the scheduler but it is best to let gridss_launcher.sh handle this.
+echo "# This is the master script that coordinates job submission for analysis of one or many Illumina whole genomes using GRIDSS.
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
-# Requires: An aligned BAM file (or files), BWA, samtools, Java, R 
+# Requires: An aligned BAM file, samtools, Java 
 #
-# Usage sbatch $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
+# Usage $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
 # -p	REQUIRED. A prefix to your sequence files of the form PREFIX*.bam
@@ -95,25 +82,12 @@ if [ -z "$workDir" ]; then # If no output directory then set and create a defaul
 	echo "## INFO: Using $workDir as the output directory"
 fi
 if [ ! -d "$workDir" ]; then
-    mkdir -p $workDir
-fi
-tmpDir=$baseTmpDir/$outPrefix
-if [ ! -d "$tmpDir" ]; then
-    mkdir -p $tmpDir
+	mkdir -p $workDir
 fi
 
-## Load modules ##
-module use $customModDir
-for mod in "${modList[@]}"; do
-    module load $mod
-done
-export R_LIBS_USER=${RLibDir}
-
-## Have at thee villain ##
-${gridss_cmd_common} \
--t ${threads} \
--s preprocess \
--o $workDir/$outPrefix.sv.vcf.gz \
--a $workDir/$outPrefix.asm.bam \
--w $tmpDir \
-${bamFile} > $workDir/$outPrefix.gridss.log 2>&1
+## Launch the job chain ##
+#preprocess_job=`sbatch --export=ALL $scriptDir/GRIDSS/gridss_preprocess.sh -c $Config -p $outPrefix -i $inputDir -o $workDir`
+#preprocess_job=$(echo $preprocess_job | cut -d" " -f4)
+assembly_job=`sbatch --array=0-31 --export=ALL $scriptDir/GRIDSS/gridss_assembly.sh -c $Config -p $outPrefix -i $inputDir -o $workDir`
+assembly_job=$(echo $assembly_job | cut -d" " -f4)
+sbatch --export=ALL --dependency=afterok:${assembly_job} $scriptDir/GRIDSS/gridss_call.sh -c $Config -p $outPrefix -i $inputDir -o $workDir

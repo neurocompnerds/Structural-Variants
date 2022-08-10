@@ -118,6 +118,6 @@ $gridss_cmd_common \
 -a $workDir/$outPrefix.asm.bam \
 -w $tmpDir \
 -s assemble \
---jobindex \$(( $SLURM_ARRAY_TASK_ID )) \
+--jobindex $SLURM_ARRAY_TASK_ID \
 --jobnodes $assembly_jobs \
 $bamFile >> $workDir/$outPrefix.gridss.log 2>&1
