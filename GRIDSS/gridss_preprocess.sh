@@ -85,9 +85,9 @@ if [ -z "$inputDir" ]; then # If path to bam file not specified then do not proc
 	exit 1
 fi
 # Locate the bam
-bamFile=$(find $inputDir/*.bam | grep $outPrefix)
+bamFile=$(find $inputDir/*.bam 2>/dev/null | grep $outPrefix)
 if [ ! -f "$bamFile" ]; then # Check if the BAM is actually CRAM
-    bamFile=$(find $inputDir/*.cram | grep $outPrefix)
+    bamFile=$(find $inputDir/*.cram 2>/dev/null | grep $outPrefix)
     if [ ! -f "$bamFile" ]; then
         echo "## ERROR: BAM or CRAM file not found in $inputDir"
         exit 1
