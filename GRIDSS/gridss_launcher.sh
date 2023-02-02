@@ -73,9 +73,12 @@ if [ -z "$inputDir" ]; then # If path to bam file not specified then do not proc
 fi
 # Locate the bam
 bamFile=$(find $inputDir/*.bam | grep $outPrefix)
-if [ ! -f "$bamFile" ]; then
-    echo "## ERROR: BAM file not found in $inputDir"
-    exit 1
+if [ ! -f "$bamFile" ]; then # Check if the BAM is actually CRAM
+    bamFile=$(find $inputDir/*.cram | grep $outPrefix)
+    if [ ! -f "$bamFile" ]; then
+        echo "## ERROR: BAM or CRAM file not found in $inputDir"
+        exit 1
+    fi
 fi 
 if [ -z "$workDir" ]; then # If no output directory then set and create a default directory
 	workDir=/hpcfs/users/${USER}/GRIDSS/$outPrefix

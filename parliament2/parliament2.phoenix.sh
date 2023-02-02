@@ -1,41 +1,38 @@
 #!/bin/bash
-#SBATCH -J assembleGRIDSS
-#SBATCH -o /hpcfs/users/%u/log/assembleGRIDSS-slurm-%j.out
+#SBATCH -J OwlsCallCNV
+#SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
 
 #SBATCH -A robinson
 #SBATCH -p batch
 #SBATCH -N 1
 #SBATCH -n 10
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=32GB
+#SBATCH --mem=16GB
 
 # Notification Configuration 
-#SBATCH --mail-type=END                                         
-#SBATCH --mail-type=FAIL                                        
+#SBATCH --mail-type=END
+#SBATCH --mail-type=FAIL
 #SBATCH --mail-user=${USER}@adelaide.edu.au
 
-# A script to preprocess bam files for GRIDSS
+# A script to call CNV from short read genome squencing
 ## List modules and file paths ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
-customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
-modList=("arch/skylake" "SAMtools/1.12" "Java/1.8.0_191" "BWA/0.7.17" "R/4.0.3")
-RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
-threads=8
-assembly_jobs=32
+variantDir="/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2"
+modList=("arch/skylake" "Singularity/3.7.4")
 
 usage()
 {
-echo "# This preprocesses BAM files for GRIDSS.  This script can be directly submitted to the scheduler but it is best to let gridss_launcher.sh handle this.
+echo "# This script takes BAM files as input and calls structural variants with the Parliament2 package.
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
-# Requires: An aligned BAM file (or files), BWA, samtools, Java, R 
+# Requires: An aligned BAM file (or files), Singularity
 #
-# Usage sbatch $0 -p file_prefix -i /path/to/input/bam-file [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
+# Usage sbatch --array 0-(n-1 bam files) $0 -i /path/to/input/folder_of_bams [ -b listOfbamFiles -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
-# -p	REQUIRED. A prefix to your sequence files of the form PREFIX*.bam
-# -i	REQUIRED. Path to the BAM file
-# -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.  The config contains all of the stuff that used to be set in the top part of our scripts
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/users/${USER}/GRIDSS/\${outPrefix} is used)
+# -i	REQUIRED. Path to the folder containing the BAM files
+# -b    OPTIONAL. A list of bam files to call, if not included all of the bam files in the folder will be called
+# -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/\${BUILD}/\${outPrefix} is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Mark Corbett, 06/07/2021 
@@ -87,12 +84,9 @@ if [ -z "$inputDir" ]; then # If path to bam file not specified then do not proc
 fi
 # Locate the bam
 bamFile=$(find $inputDir/*.bam | grep $outPrefix)
-if [ ! -f "$bamFile" ]; then # Check if the BAM is actually CRAM
-    bamFile=$(find $inputDir/*.cram | grep $outPrefix)
-    if [ ! -f "$bamFile" ]; then
-        echo "## ERROR: BAM or CRAM file not found in $inputDir"
-        exit 1
-    fi
+if [ ! -f "$bamFile" ]; then
+    echo "## ERROR: BAM file not found in $inputDir"
+    exit 1
 fi 
 if [ -z "$workDir" ]; then # If no output directory then set and create a default directory
 	workDir=/hpcfs/users/${USER}/GRIDSS/$outPrefix
@@ -107,20 +101,8 @@ if [ ! -d "$tmpDir" ]; then
 fi
 
 ## Load modules ##
-module use $customModDir
 for mod in "${modList[@]}"; do
     module load $mod
 done
-export R_LIBS_USER=${RLibDir}
 
-## Create a job array containing assembly jobs
-
-$gridss_cmd_common \
--t $threads \
--o $workDir/$outPrefix.sv.vcf.gz \
--a $workDir/$outPrefix.asm.bam \
--w $tmpDir \
--s assemble \
---jobindex $SLURM_ARRAY_TASK_ID \
---jobnodes $assembly_jobs \
-$bamFile >> $workDir/$outPrefix.gridss.log 2>&1
+singularity run -v ${inputDir}:/home/dnanexus/in -v ${outputDir}:/home/dnanexus/out dnanexus/parliament2:<TAG> --bam <BAM_NAME> --bai <INDEX_NAME> --fai <REFERENCE_INDEX> -r <REFERENCE_NAME> <OPTIONAL_ARGUMENTS>
