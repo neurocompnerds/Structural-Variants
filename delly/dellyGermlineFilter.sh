@@ -8,7 +8,7 @@
 ## INDIR=/hpcfs/users/$USER/outputs/SVcalling sbatch dellyGermlineFilter.sh
 
 #SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=1-00:00

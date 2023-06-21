@@ -7,7 +7,7 @@
 ## INDIR=/hpcfs/groups/phoenix-hpc-neurogenetics/alignments/Illumina/genome/allGenomes SITELIST=/hpcfs/users/$USER/outputs/SVcalling/dellyOut/sites.bcf sbatch --array 0-19 dellyGenotype.sh
 
 #SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=1-00:00

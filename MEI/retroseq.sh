@@ -2,9 +2,7 @@
 
 #SBATCH -J retroseq
 #SBATCH -o /hpcfs/users/%u/retroseq-slurm-%j.out
-
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=1-00:00
@@ -19,6 +17,7 @@
 neuroDir=/hpcfs/groups/phoenix-hpc-neurogenetics
 retroseqScript=$neuroDir/executables/RetroSeq/bin/retroseq.pl
 modList=("arch/haswell" "Exonerate/2.2.0-foss-2016uofa" "BEDTools/2.25.0-GCC-5.3.0-binutils-2.25" "SAMtools/0.1.19-GCC-5.3.0-binutils-2.25")
+
 usage()
 {
 echo "# Script for identifying retrotransposed elements in an aligned Genome using RetroSeq pipeline

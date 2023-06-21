@@ -1,9 +1,7 @@
 #!/bin/bash
 #SBATCH -J OwlsCallCNV
 #SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
-
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 10
 #SBATCH --time=1-00:00:00
