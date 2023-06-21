@@ -21,7 +21,7 @@ threads=8
 
 module purge
 module use /apps/skl/modules/all
-modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCCcore-11.2.0" "Java/1.8.0_191" "R/4.0.3")
+modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.0.3")
 
 usage()
 {
