@@ -1,9 +1,7 @@
 #!/bin/bash
 #SBATCH -J assembleGRIDSS
 #SBATCH -o /hpcfs/users/%u/log/assembleGRIDSS-slurm-%j.out
-
-#SBATCH -A robinson
-#SBATCH -p batch
+#SBATCH -p skylake,icelake,skylakehm,v100cpu
 #SBATCH -N 1
 #SBATCH -n 10
 #SBATCH --time=1-00:00:00
@@ -18,10 +16,13 @@
 ## List modules and file paths ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
 customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
-modList=("arch/skylake" "SAMtools/1.12" "Java/1.8.0_191" "BWA/0.7.17" "R/4.0.3")
 RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
 threads=8
 assembly_jobs=32
+
+module purge
+module use /apps/skl/modules/all
+modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.0.3")
 
 usage()
 {
@@ -107,7 +108,6 @@ if [ ! -d "$tmpDir" ]; then
 fi
 
 ## Load modules ##
-module use $customModDir
 for mod in "${modList[@]}"; do
     module load $mod
 done
