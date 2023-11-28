@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J OwlsCallCNV
 #SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 10
 #SBATCH --time=1-00:00:00
@@ -46,14 +46,14 @@ while [ "$1" != "" ]; do
         -c )            shift
                         Config=$1
                         ;;
-        -p )            shift
+        -b )            shift
                         outPrefix=$1
                         ;;
         -i )            shift
                         inputDir=$1
                         ;;
         -o )            shift
-                        workDir=$1
+                        outputDir=$1
                         ;;
         -h | --help )   usage
                         exit 0
@@ -81,17 +81,22 @@ if [ -z "$inputDir" ]; then # If path to bam file not specified then do not proc
 	exit 1
 fi
 # Locate the bam
-bamFile=$(find $inputDir/*.bam | grep $outPrefix)
+bamFile=$(find $inputDir/*.bam | grep -w $outPrefix)
 if [ ! -f "$bamFile" ]; then
     echo "## ERROR: BAM file not found in $inputDir"
     exit 1
 fi 
-if [ -z "$workDir" ]; then # If no output directory then set and create a default directory
-	workDir=/hpcfs/users/${USER}/GRIDSS/$outPrefix
-	echo "## INFO: Using $workDir as the output directory"
+baiFile=$(find $inputDir/*.bai | grep -w $outPrefix)
+if [ ! -f "$baiFile" ]; then
+    echo "## ERROR: The BAM index file was not found in $inputDir"
+    exit 1
+fi 
+if [ -z "$outputDir" ]; then # If no output directory then set and create a default directory
+	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${BUILD}/
+	echo "## INFO: Using $outputDir as the output directory"
 fi
-if [ ! -d "$workDir" ]; then
-    mkdir -p $workDir
+if [ ! -d "$outputDir" ]; then
+    mkdir -p $outputDir
 fi
 tmpDir=$baseTmpDir/$outPrefix
 if [ ! -d "$tmpDir" ]; then
@@ -103,4 +108,4 @@ for mod in "${modList[@]}"; do
     module load $mod
 done
 
-singularity run -v ${inputDir}:/home/dnanexus/in -v ${outputDir}:/home/dnanexus/out dnanexus/parliament2:<TAG> --bam <BAM_NAME> --bai <INDEX_NAME> --fai <REFERENCE_INDEX> -r <REFERENCE_NAME> <OPTIONAL_ARGUMENTS>
+singularity run -v ${inputDir}:/home/dnanexus/in -v ${outputDir}:/home/dnanexus/out dnanexus/parliament2:<TAG> --bam ${bamFile} --bai ${baiFile} --fai <REFERENCE_INDEX> -r <REFERENCE_NAME> <OPTIONAL_ARGUMENTS>

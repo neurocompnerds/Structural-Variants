@@ -7,7 +7,7 @@
 ## INDIR=/hpcfs/groups/phoenix-hpc-neurogenetics/alignments/Illumina/genome/Bams4smoove sbatch smoove.sh
 
 #SBATCH -A robinson
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=1-00:00

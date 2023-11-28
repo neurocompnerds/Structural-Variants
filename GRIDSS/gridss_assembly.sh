@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J assembleGRIDSS
 #SBATCH -o /hpcfs/users/%u/log/assembleGRIDSS-slurm-%j.out
-#SBATCH -p skylake,icelake,skylakehm,v100cpu
+#SBATCH -p skylake,icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 10
 #SBATCH --time=1-00:00:00
@@ -21,8 +21,11 @@ threads=8
 assembly_jobs=32
 
 module purge
-module use /apps/skl/modules/all
-modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.0.3")
+#module use /apps/skl/modules/all
+#modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.0.3")
+
+#updated by Nandini, since GRIDSS cannot work with the above modules (for R) as it was outdated, please delete if irrelevant
+modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.2.3-rootssl-foss-2021b")
 
 usage()
 {
