@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J callGRIDSS
 #SBATCH -o /hpcfs/users/%u/log/callGRIDSS-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 18
 #SBATCH --time=1-00:00:00

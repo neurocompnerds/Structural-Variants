@@ -6,7 +6,7 @@
 ## Example usage:
 ## INDIR=/hpcfs/groups/phoenix-hpc-neurogenetics/alignments/Illumina/genomes/ID_Jan2021 sbatch --array 0-3 dellyCall.sh
 
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=3-00:00

@@ -7,7 +7,7 @@
 ## Example usage:
 ## INDIR=/hpcfs/users/$USER/outputs/SVcalling sbatch dellyGermlineFilter.sh
 
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 8
 #SBATCH --time=1-00:00

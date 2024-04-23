@@ -2,7 +2,7 @@
 
 #SBATCH -J retroseq
 #SBATCH -o /hpcfs/users/%u/retroseq-slurm-%j.out
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=1-00:00

@@ -2,7 +2,7 @@
 #SBATCH -J clinSV
 #SBATCH -o /hpcfs/users/%u/log/clinsv-slurm-%j.out
 
-#SBATCH -p skylake,icelake,a100cpu
+#SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 16
 #SBATCH --time=12:00:00
