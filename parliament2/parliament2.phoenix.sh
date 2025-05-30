@@ -103,7 +103,7 @@ for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
-singularity run --bind ${inputDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
+singularity run --bind ${inputDir},${refPath},${outputDir}:/home/dnanexus/out \
     ${progDir}/${progName} \
     --bam ${bamFile} \
     --bai ${baiFile} \
