@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J CNVByOwl
-#SBATCH -o /scratchdata1/users/%u/log/parliament2-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 10
@@ -29,7 +29,7 @@ echo "# This script takes BAM files as input and calls structural variants with 
 # Options
 # -b    REQUIRED. A list of bam files to call, in a text file with the full path to the bam file provided.
 # -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.
-# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /scratchdata1/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/\${BUILD}/\${outPrefix} is used)
+# -o	OPTIONAL. Path to where you want to find your file output (if not specified an output directory /hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/\${BUILD}/\${outPrefix} is used)
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
 # Original: Mark Corbett, 30/05/2025 
@@ -86,7 +86,7 @@ if [ ! -f "$baiFile" ]; then
     fi
 fi 
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
-	outputDir=/scratchdata1/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
+	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
 	echo "## INFO: Using ${outputDir} as the output directory"
 fi
 # Ensure required directories exist
