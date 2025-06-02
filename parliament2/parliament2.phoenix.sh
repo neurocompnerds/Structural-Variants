@@ -89,12 +89,12 @@ if [ ! -f "$baiFile" ]; then
 fi
 
 # Protect your source data
-cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
-cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")"
+cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
 
 # swap in the annoying hard coded dnanexus file path (yes these lines make me feel dirty too).
-BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
 
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
@@ -122,5 +122,5 @@ singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexu
     --genotype
 
 # Clean up a bit
-rm "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
-rm "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")"
+rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
