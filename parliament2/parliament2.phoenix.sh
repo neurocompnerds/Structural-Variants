@@ -110,6 +110,7 @@ singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexu
     ${progDir}/${progName} \
     --bam ${bamFile} \
     --bai ${baiFile} \
+    --prefix ${outPrefix} \
     --fai ${refPath}/${Genome}.fai \
     -r ${refPath}/${Genome} \
     --manta --cnvnator --lumpy \
