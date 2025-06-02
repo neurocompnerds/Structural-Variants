@@ -23,6 +23,7 @@ usage()
 echo "# This script takes BAM files as input and calls structural variants with the Parliament2 package.
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
 # Requires: An aligned BAM (or CRAM) file (or files), Singularity
+# NOTE: CRAM or BAM files must be placed in a subdirectory of /hpcfs/groups/phoenix-hpc-neurogenetics
 #
 # Usage sbatch --array 0-(n-1 bam files) $0 -b listOfbamFiles [-o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
@@ -84,7 +85,13 @@ if [ ! -f "$baiFile" ]; then
         echo "## ERROR: The BAM or CRAM index for ${bamFile} was not found."
         exit 1
     fi
-fi 
+fi
+# swap in the annoying hard coded dnanexus file path
+BF=$(ehco "${bamFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+IndexFile=$(ehco "${baiFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+bamFile=$BF
+baiFile=$IndexFile
+
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
 	echo "## INFO: Using ${outputDir} as the output directory"
@@ -103,7 +110,7 @@ for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
-singularity exec --bind ${inputDir},${refPath},${outputDir} \
+singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir} \
     ${progDir}/${progName} \
     --bam ${bamFile} \
     --bai ${baiFile} \
