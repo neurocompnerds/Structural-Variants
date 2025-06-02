@@ -81,16 +81,16 @@ outPrefix=$(basename "${bamFile}" | sed 's/\.[^.]*$//') # Get the output prefix 
 baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
 if [ ! -f "$baiFile" ]; then
     baiFile=$(find ${inputDir}/*.crai | grep -w ${outPrefix})
-    if [ ! -f "$baiFile" ]; then
+    if [ ! -f "${baiFile}" ]; then
         echo "## ERROR: The BAM or CRAM index for ${bamFile} was not found."
         exit 1
     fi
 fi
 # swap in the annoying hard coded dnanexus file path
-BF=$(ehco "${bamFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-IndexFile=$(ehco "${baiFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-bamFile=$BF
-baiFile=$IndexFile
+BF=$(echo "${bamFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+IndexFile=$(echo "${baiFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+bamFile=${BF}
+baiFile=${IndexFile}
 
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
@@ -99,10 +99,6 @@ fi
 # Ensure required directories exist
 if [ ! -d "${outputDir}" ]; then
     mkdir -p ${outputDir}
-fi
-tmpDir=${baseTmpDir}/${outPrefix}
-if [ ! -d "${tmpDir}" ]; then
-    mkdir -p ${tmpDir}
 fi
 
 ## Load modules ##
