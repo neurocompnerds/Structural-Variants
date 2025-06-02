@@ -14,7 +14,7 @@
 #SBATCH --mail-user=%u@adelaide.edu.au
 
 # define key variables
-scriptDir="$(dirname "$(readlink -f "$0")")"
+scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants" #"$(dirname "$(readlink -f "$0")")"
 modList=("Singularity/3.10.5" "BCFtools/1.17-GCC-11.2.0" "HTSlib/1.17-GCC-11.2.0")
 
 usage()
@@ -82,30 +82,30 @@ bamFile=$(sed -n "${SLURM_ARRAY_TASK_ID}p" ${bamList}) # Get the BAM file from t
 inputDir=$(dirname "${bamFile}") # Get the input directory from the BAM file path
 outPrefix=$(basename "${bamFile}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
 
-if [ -z "$pctAlignId" ]; then # If no alignment minimum match percentage specified use the default
+if [ -z "${pctAlignId}" ]; then # If no alignment minimum match percentage specified use the default
     pctAlignId=80
 fi
-if [ -z "$outputDir" ]; then # If no output directory then use the default
+if [ -z "${outputDir}" ]; then # If no output directory then use the default
     outputDir=/hpcfs/users/${USER}/retroseq/${outPrefix}
     echo "## INFO: No output directory was specified so the default ${outputDir} will be used."
 fi
 
-if [ ! -d $outputDir ]; then
-        mkdir -p $outputDir
+if [ ! -d "${outputDir}" ]; then
+        mkdir -p ${outputDir}
 fi
-if [ ! -d $outputDir/TEdiscovery ]; then
-        mkdir -p $outputDir/TEdiscovery
-        mkdir -p $outputDir/TEcalling
+if [ ! -d "${outputDir}/TEdiscovery" ]; then
+        mkdir -p ${outputDir}/TEdiscovery
+        mkdir -p ${outputDir}/TEcalling
 fi
 
 # Do a little summary for the log file
 echo "
 # Running Retroseq with the following parameters
 # File: ${bamFile} 
-# Outputs can be found here: $outputDir
-# Minimum match percentage: $pctAlignId %
-# Genome: $Build (If you have problems with the output make sure this reference matches the BAM file)
-# Repeat library: $repeatsDir
+# Outputs can be found here: ${outputDir}
+# Minimum match percentage: ${pctAlignId} %
+# Genome: ${Build} (If you have problems with the output make sure this reference matches the BAM file)
+# Repeat library: ${repeatsDir}
 "
 # load modules
 for mod in "${modList[@]}"; do
@@ -135,7 +135,7 @@ echo "filtering complete"
 echo "calling..."
 
 singularity exec --bind ${neuroDir},${outputDir} ${progDir}/${progName} -call \
--bam ${inputDir}/${outPrefix} \
+-bam ${bamFile} \
 -input ${outputDir}/TEdiscovery/${outPrefix}.candidates.tab.filtered \
 -ref ${refPath}/${Genome} \
 -output ${outputDir}/TEcalling/${outPrefix}.vcf >> ${outputDir}/${outPrefix}.log 2>&1

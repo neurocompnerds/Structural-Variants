@@ -15,7 +15,7 @@
 # A script to call CNV from short read genome squencing
 
 ## List modules and file paths ##
-scriptDir="$(dirname "$(readlink -f "$0")")"
+scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants" #"$(dirname "$(readlink -f "$0")")"
 modList=("Singularity/3.10.5")
 
 usage()
@@ -103,7 +103,7 @@ for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
-singularity run --bind ${inputDir},${refPath},${outputDir}:/home/dnanexus/out \
+singularity exec --bind ${inputDir},${refPath},${outputDir} \
     ${progDir}/${progName} \
     --bam ${bamFile} \
     --bai ${baiFile} \
