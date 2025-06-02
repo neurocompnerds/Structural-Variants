@@ -24,6 +24,7 @@ echo "# This script takes BAM files as input and calls structural variants with 
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
 # Requires: An aligned BAM (or CRAM) file (or files), Singularity
 # NOTE: CRAM or BAM files must be placed in a subdirectory of /hpcfs/groups/phoenix-hpc-neurogenetics
+# NOTE: Parliament2 is not respectful of your source data (it will delete your BAM/CRAMs) so the script will copy your files first then try to clean up after itself.
 #
 # Usage sbatch --array 0-(n-1 bam files) $0 -b listOfbamFiles [-o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
@@ -75,22 +76,25 @@ fi
 
 source ${Config}
 
-bamFile=$(sed -n "${SLURM_ARRAY_TASK_ID}p" ${bamList}) # Get the BAM file from the list
-inputDir=$(dirname "${bamFile}") # Get the input directory from the BAM file path
-outPrefix=$(basename "${bamFile}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
+readarray -t bamFile < ${bamList} # Read the BAM file list into an array
+inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}") # Get the input directory from the BAM file path
+outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
 baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
 if [ ! -f "$baiFile" ]; then
     baiFile=$(find ${inputDir}/*.crai | grep -w ${outPrefix})
     if [ ! -f "${baiFile}" ]; then
-        echo "## ERROR: The BAM or CRAM index for ${bamFile} was not found."
+        echo "## ERROR: The BAM or CRAM index for ${bamFile[SLURM_ARRAY_TASK_ID]} was not found."
         exit 1
     fi
 fi
-# swap in the annoying hard coded dnanexus file path
-BF=$(echo "${bamFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-IndexFile=$(echo "${baiFile}" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-bamFile=${BF}
-baiFile=${IndexFile}
+
+# Protect your source data
+cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")"
+
+# swap in the annoying hard coded dnanexus file path (yes these lines make me feel dirty too).
+BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
 
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
@@ -108,11 +112,15 @@ done
 
 singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
     ${progDir}/${progName} \
-    --bam ${bamFile} \
-    --bai ${baiFile} \
+    --bam ${BF} \
+    --bai ${IndexFile} \
     --prefix ${outPrefix} \
     --fai ${refPath}/${Genome}.fai \
     -r ${refPath}/${Genome} \
     --manta --cnvnator --lumpy \
     --delly_deletion --delly_duplication --delly_inversion --delly_insertion \
     --genotype
+
+# Clean up a bit
+rm "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+rm "${neuroDir}/alignments/Illumina/genome/bams4parliament2/$(basename "${baiFile}")"

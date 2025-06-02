@@ -78,9 +78,9 @@ fi
 
 source ${Config}
 
-bamFile=$(sed -n "${SLURM_ARRAY_TASK_ID}p" ${bamList}) # Get the BAM file from the list
-inputDir=$(dirname "${bamFile}") # Get the input directory from the BAM file path
-outPrefix=$(basename "${bamFile}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
+readarray -t bamFile < ${bamList} # Read the BAM file list into an array
+inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}") # Get the input directory from the BAM file path
+outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
 
 if [ -z "${pctAlignId}" ]; then # If no alignment minimum match percentage specified use the default
     pctAlignId=80
@@ -101,7 +101,7 @@ fi
 # Do a little summary for the log file
 echo "
 # Running Retroseq with the following parameters
-# File: ${bamFile} 
+# File: ${bamFile[SLURM_ARRAY_TASK_ID]} 
 # Outputs can be found here: ${outputDir}
 # Minimum match percentage: ${pctAlignId} %
 # Genome: ${Build} (If you have problems with the output make sure this reference matches the BAM file)
@@ -118,7 +118,7 @@ done
 echo "discovering..."
 
 singularity exec --bind ${neuroDir},${outputDir} ${progDir}/${progName} -discover \
--bam ${bamFile} \
+-bam ${bamFile[SLURM_ARRAY_TASK_ID]} \
 -output ${outputDir}/TEdiscovery/${outPrefix}.candidates.tab \
 -eref ${repeatsDir}/eref_types.tab \
 -align -id ${pctAlignId} > ${outputDir}/${outPrefix}.log 2>&1
@@ -135,7 +135,7 @@ echo "filtering complete"
 echo "calling..."
 
 singularity exec --bind ${neuroDir},${outputDir} ${progDir}/${progName} -call \
--bam ${bamFile} \
+-bam ${bamFile[SLURM_ARRAY_TASK_ID]} \
 -input ${outputDir}/TEdiscovery/${outPrefix}.candidates.tab.filtered \
 -ref ${refPath}/${Genome} \
 -output ${outputDir}/TEcalling/${outPrefix}.vcf >> ${outputDir}/${outPrefix}.log 2>&1
