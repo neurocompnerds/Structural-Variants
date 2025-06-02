@@ -106,7 +106,7 @@ for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
-singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir} \
+singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
     ${progDir}/${progName} \
     --bam ${bamFile} \
     --bai ${baiFile} \
