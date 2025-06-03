@@ -133,7 +133,7 @@ singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexu
     --genotype
 
 # Clean up a bit
+rm ${outputDir}/input.bam ${outputDir}/input.bam.bai
 rm ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
 rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
-rm ${outputDir}/ref.fa ${outputDir}/ref.fai # because what I really want is multiple copies of the reference genome in every directory!
-rm ${outputDir}/input.bam ${outputDir}/input.bam.bai
+rm ${outputDir}/ref.fa ${outputDir}/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
