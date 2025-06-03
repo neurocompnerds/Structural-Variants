@@ -110,6 +110,9 @@ for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
+#Switch to the output directory because this software dumps all manner of crap in the current working directory if you don't
+cd ${outputDir}
+
 singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
     ${progDir}/${progName} \
     --bam ${BF} \

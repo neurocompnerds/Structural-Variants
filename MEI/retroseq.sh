@@ -114,6 +114,9 @@ done
 
 # run pipeline
 
+# Retroseq makes temp files in the current working directory so we need to change to the output directory
+cd ${outputDir} 
+
 ### discovery phase ###
 echo "discovering..."
 
