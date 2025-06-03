@@ -16,15 +16,16 @@
 
 ## List modules and file paths ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants" #"$(dirname "$(readlink -f "$0")")"
-modList=("Singularity/3.10.5")
+modList=("Singularity/3.10.5" "SAMtools/1.17-GCC-11.2.0")
 
 usage()
 {
 echo "# This script takes BAM files as input and calls structural variants with the Parliament2 package.
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
-# Requires: An aligned BAM (or CRAM) file (or files), Singularity
+# Requires: An aligned BAM (or CRAM) file (or files), Singularity and the Parliament2 software.
 # NOTE: CRAM or BAM files must be placed in a subdirectory of /hpcfs/groups/phoenix-hpc-neurogenetics
 # NOTE: Parliament2 is not respectful of your source data (it will delete your BAM/CRAMs) so the script will copy your files first then try to clean up after itself.
+# NOTE: This script is only designed to work with hs38DH genome build so far.  If you have CRAMs and they are not mapped to that build then this won't work.
 #
 # Usage sbatch --array 0-(n-1 bam files) $0 -b listOfbamFiles [-o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
@@ -76,25 +77,37 @@ fi
 
 source ${Config}
 
+## Load modules ##
+for mod in "${modList[@]}"; do
+    module load ${mod}
+done
+
 readarray -t bamFile < ${bamList} # Read the BAM file list into an array
 inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}") # Get the input directory from the BAM file path
 outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
-baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
-if [ ! -f "$baiFile" ]; then
-    baiFile=$(find ${inputDir}/*.crai | grep -w ${outPrefix})
-    if [ ! -f "${baiFile}" ]; then
-        echo "## ERROR: The BAM or CRAM index for ${bamFile[SLURM_ARRAY_TASK_ID]} was not found."
+extn=${bamFile[SLURM_ARRAY_TASK_ID]##*.}
+
+# Parliament claims to handle CRAMs but in reality it doesn't.
+case ${extn} in
+    "bam"  )
+        baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
+        cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+        cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
+        BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        ;;
+    "cram" )
+        samtools view -T ${refPath}/${Genome} -b -@8 -o ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
+        samtools index ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
+        baiFile=$(find ${neuroDir}/alignments/Illumina/genome/bams4parliament/*.bai | grep -w ${outPrefix})
+        BF=$(echo ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        ;;
+    * )
+        echo "## ERROR: The file ${bamFile[SLURM_ARRAY_TASK_ID]} is not a BAM or CRAM file."
         exit 1
-    fi
-fi
-
-# Protect your source data
-cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
-cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
-
-# swap in the annoying hard coded dnanexus file path (yes these lines make me feel dirty too).
-BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        ;;
+esac
 
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
@@ -104,11 +117,6 @@ fi
 if [ ! -d "${outputDir}" ]; then
     mkdir -p ${outputDir}
 fi
-
-## Load modules ##
-for mod in "${modList[@]}"; do
-    module load ${mod}
-done
 
 #Switch to the output directory because this software dumps all manner of crap in the current working directory if you don't
 cd ${outputDir}
@@ -125,5 +133,7 @@ singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexu
     --genotype
 
 # Clean up a bit
-rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+rm ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
 rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
+rm ${outputDir}/ref.fa ${outputDir}/ref.fai # because what I really want is multiple copies of the reference genome in every directory!
+rm ${outputDir}/input.bam ${outputDir}/input.bam.bai
