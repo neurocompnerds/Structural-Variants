@@ -136,4 +136,4 @@ singularity exec --bind ${outputDir}/in:/home/dnanexus/in,${outputDir}/out:/home
 
 # Clean up a bit
 rm -r ${outputDir}/in
-rm ${outputDir}/out/ref.fa ${outputDir}/out/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
+rm ${outputDir}/ref.fa ${outputDir}/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
