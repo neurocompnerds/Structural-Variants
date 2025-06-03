@@ -121,6 +121,11 @@ fi
 #Switch to the output directory because this software dumps all manner of crap in the current working directory if you don't
 cd ${outputDir}
 
+# Check for the "done.txt" file and remove it if it exists
+if [ -f "${neuroDir}/done.txt" ]; then
+    rm ${neuroDir}/done.txt
+fi
+
 singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
     ${progDir}/${progName} \
     --bam ${BF} \
@@ -137,3 +142,4 @@ rm ${outputDir}/input.bam ${outputDir}/input.bam.bai
 rm ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
 rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
 rm ${outputDir}/ref.fa ${outputDir}/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
+rm ${neuroDir}/done.txt
