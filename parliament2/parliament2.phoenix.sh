@@ -87,21 +87,32 @@ inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}") # Get the input directory 
 outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Get the output prefix from the BAM file name. NOTE: This pattern may not match all BAM file names.
 extn=${bamFile[SLURM_ARRAY_TASK_ID]##*.}
 
+if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
+	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
+	echo "## INFO: Using ${outputDir} as the output directory"
+fi
+# Ensure required directories exist
+mkdir -p ${outputDir}/in
+mkdir -p ${outputDir}/out
+cp ${neuroDir}/RefSeq/${Genome} ${outputDir}/in/
+cp ${neuroDir}/RefSeq/${Genome}.fai ${outputDir}/in/
+refPath=/home/dnanexus/in # Set the reference path to the input directory
+
 # Parliament claims to handle CRAMs but in reality it doesn't.
 case ${extn} in
     "bam"  )
         baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
-        cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
-        cp "${baiFile}" "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
-        BF=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-        IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${outputDir}/in/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+        cp "${baiFile}" "${outputDir}/in/$(basename "${baiFile}")"
+        BF="/home/dnanexus/in/$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}")"
+        IndexFile="/home/dnanexus/in/$(basename "${baiFile}")"
         ;;
     "cram" )
-        samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
-        samtools index ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
-        baiFile=$(find ${neuroDir}/alignments/Illumina/genome/bams4parliament/*.bai | grep -w ${outPrefix})
-        BF=$(echo ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
-        IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
+        samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${outputDir}/in/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
+        samtools index ${outputDir}/in/${outPrefix}.bam
+        baiFile=$(find ${outputDir}/in/*.bai | grep -w ${outPrefix})
+        BF="/home/dnanexus/in/${outPrefix}.bam"
+        IndexFile="/home/dnanexus/in/$(basename "${baiFile}")"
         ;;
     * )
         echo "## ERROR: The file ${bamFile[SLURM_ARRAY_TASK_ID]} is not a BAM or CRAM file."
@@ -109,24 +120,10 @@ case ${extn} in
         ;;
 esac
 
-if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
-	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
-	echo "## INFO: Using ${outputDir} as the output directory"
-fi
-# Ensure required directories exist
-if [ ! -d "${outputDir}" ]; then
-    mkdir -p ${outputDir}
-fi
-
 #Switch to the output directory because this software dumps all manner of crap in the current working directory if you don't
 cd ${outputDir}
 
-# Check for the "done.txt" file and remove it if it exists
-if [ -f "${neuroDir}/done.txt" ]; then
-    rm ${neuroDir}/done.txt
-fi
-
-singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexus/out \
+singularity exec --bind ${outputDir}/in:/home/dnanexus/in,${outputDir}/out:/home/dnanexus/out \
     ${progDir}/${progName} \
     --bam ${BF} \
     --bai ${IndexFile} \
@@ -138,8 +135,5 @@ singularity exec --bind ${neuroDir}:/home/dnanexus/in,${outputDir}:/home/dnanexu
     --genotype
 
 # Clean up a bit
-rm ${outputDir}/input.bam ${outputDir}/input.bam.bai
-rm ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
-rm "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")"
-rm ${outputDir}/ref.fa ${outputDir}/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
-rm ${neuroDir}/done.txt
+rm -r ${outputDir}/in
+rm ${outputDir}/out/ref.fa ${outputDir}/out/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
