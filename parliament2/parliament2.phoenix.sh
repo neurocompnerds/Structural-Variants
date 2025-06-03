@@ -97,7 +97,7 @@ case ${extn} in
         IndexFile=$(echo "${neuroDir}/alignments/Illumina/genome/bams4parliament/$(basename "${baiFile}")" | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
         ;;
     "cram" )
-        samtools view -T ${refPath}/${Genome} -b -@8 -o ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
+        samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
         samtools index ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam
         baiFile=$(find ${neuroDir}/alignments/Illumina/genome/bams4parliament/*.bai | grep -w ${outPrefix})
         BF=$(echo ${neuroDir}/alignments/Illumina/genome/bams4parliament/${outPrefix}.bam | sed 's,\/hpcfs\/groups\/phoenix-hpc-neurogenetics,\/home\/dnanexus\/in,g') 
