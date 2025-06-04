@@ -6,19 +6,31 @@ Our collection of scripts used to provide inputs to tools that detect structural
 This repo doesn't get as much love as it should so even if you are from the Neuro team you may find some scripts do not work on the current set up of the Adelaide University HPC.
 
 Scripts / pipelines that *should* work:
+
 GRIDSS
+
 Parliament2
+
 MEI/retroseq
 
 Things that definitely *don't* work:
+
 clinsv (we wish it would).
+
 delly (use Parliament2 instead).
+
 smoove
 
 ## Usage notes
-Most scripts default to hs38DH build which is the default build also used for our map-n-call (BWA/GATK) pipeline.  If you want to use these tools on a different genome build then you need to make a config file for it (see 'configs/' directory for examples) *and* you need to make sure that all of the neccesary reference files are available for it.
+Some of these pipelines are described in our Google Doc protocols.
 
-Most scripts will have help built-in and these can usually be accessed with '-h' or '--help' flags when executing the script on the command line.  
+https://docs.google.com/document/d/1TbvCCqPcnCx9Xl9MZPZgQquyuG6FG43shAobZbsFB8I
 
-GRIDSS is the most complicated pipeline which has multiple stages associated with it.  You can execute the entire pipeline from the command line using the 'GRIDSS/gridss_launcher.sh' script which will set up all of your SLURM submissions.
+Most scripts default to hs38DH build which is also the default build used for our map-n-call (BWA/GATK) pipeline https://github.com/speleonut/map-n-call.  If you want to use these tools on a different genome build then you will need to make a config file for it (see 'configs/' directory for examples) *and* you need to make sure that all of the neccesary reference files are available for it.
+
+Most scripts will have help built-in and these can usually be accessed with `-h` or `--help` flags when executing the script on the command line.  
+
+GRIDSS is the most complicated pipeline which has multiple stages associated with it.  You can execute the entire pipeline from the command line using the `GRIDSS/gridss_launcher.sh` script which will set up all of your SLURM submissions.
+
+Parliament2 is not kind to your available disk space.  It is limited due to hard coded paths and file names that it uses and generalised locations for dumping of temporary files while it runs different programs.  To get it to run in parallel without each sample overwriting files from another sample this script needs to copy the genome reference to a folder for *every* BAM/CRAM file you are running.  Our script makes a copy of the input BAM/CRAM file because Parliament2 also does not respect input data (it will move it, rename it and delete the original). The script makes further replications of the BAM when it splits everything by chromosome.  Future incarnations of the script will do a better job of cleaning up after the process has run.
 

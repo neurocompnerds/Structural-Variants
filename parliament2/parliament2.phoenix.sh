@@ -90,13 +90,17 @@ extn=${bamFile[SLURM_ARRAY_TASK_ID]##*.}
 if [ -z "${outputDir}" ]; then # If no output directory then set a default directory
 	outputDir=/hpcfs/groups/phoenix-hpc-neurogenetics/variants/SV/Parliament2/${Build}/${outPrefix}
 	echo "## INFO: Using ${outputDir} as the output directory"
+else
+    outputDir=${outputDir}/${Build}/${outPrefix}
+    echo "## INFO: Using ${outputDir} as the output directory for ${bamFile[SLURM_ARRAY_TASK_ID]}"
 fi
+
 # Ensure required directories exist
 mkdir -p ${outputDir}/in
 mkdir -p ${outputDir}/out
 cp ${neuroDir}/RefSeq/${Genome} ${outputDir}/in/
 cp ${neuroDir}/RefSeq/${Genome}.fai ${outputDir}/in/
-refPath=/home/dnanexus/in # Set the reference path to the input directory
+refPath=/home/dnanexus/in # Set the reference path to the container's input directory
 
 # Parliament claims to handle CRAMs but in reality it doesn't.
 case ${extn} in
