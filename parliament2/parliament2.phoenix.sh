@@ -3,9 +3,9 @@
 #SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
-#SBATCH -n 10
+#SBATCH -n 16
 #SBATCH --time=1-00:00:00
-#SBATCH --mem=16GB
+#SBATCH --mem=128GB
 
 # Notification Configuration 
 #SBATCH --mail-type=END

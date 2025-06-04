@@ -15,15 +15,11 @@
 # A script to preprocess bam files for GRIDSS
 ## List modules and file paths ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
-customModDir="/hpcfs/groups/phoenix-hpc-neurogenetics/executables/easybuild/modules/all"
-RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.0.3/RLibs"
+RLibDir="/hpcfs/groups/phoenix-hpc-neurogenetics/RefSeq/R/4.3.1/lib"
 threads=16
 
 module purge
-#module use /apps/skl/modules/all
-#modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.0.3")
-#updated by Nandini, since GRIDSS cannot work with the above modules (for R) as it was outdated.
-modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.2.3-rootssl-foss-2021b")
+modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "BCFtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.3.1-foss-2021b")
 
 usage()
 {
@@ -122,3 +118,7 @@ $gridss_cmd_common \
 -a $workDir/$outPrefix.asm.bam \
 -w $tmpDir \
 ${bamFile} >> $workDir/$outPrefix.gridss.log 2>&1
+
+$scriptDir/GRIDSS/simple.event.annotator.R -v $workDir/$outPrefix.sv.vcf.gz -o $workDir/$outPrefix.annotated.sv
+
+bgzip -f $workDir/$outPrefix.annotated.sv.vcf && tabix $workDir/$outPrefix.annotated.sv.vcf.gz
