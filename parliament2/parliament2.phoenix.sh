@@ -16,7 +16,7 @@
 
 ## List modules and file paths ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants" #"$(dirname "$(readlink -f "$0")")"
-modList=("Singularity/3.10.5" "SAMtools/1.17-GCC-11.2.0")
+modList=("Singularity/3.10.5" "SAMtools/1.17-GCC-11.2.0" "BCFtools/1.17-GCC-11.2.0")
 
 usage()
 {
@@ -163,17 +163,17 @@ rm -r ${outputDir}/in \
 # Compress and index the VCF files
 cd ${outputDir}/out/svtyped_vcfs
 for VCF in *.vcf; do
-    bgzip ${VCF} && tabix ${VCF}.gz &
+    bcftools sort -Oz ${VCF} && tabix ${VCF}.gz &
 done
 wait
 
 cd ${outputDir}/out/sv_caller_results
 for VCF in *.vcf; do
-    bgzip ${VCF} && tabix ${VCF}.gz &
+    bcftools sort -Oz ${VCF} && tabix ${VCF}.gz &
 done
 wait 
 
 cd ${outputDir}/out
 for VCF in *.vcf; do
-    bgzip ${VCF} && tabix ${VCF}.gz
+    bcftools sort -Oz ${VCF} && tabix ${VCF}.gz
 done
