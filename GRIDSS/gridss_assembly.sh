@@ -4,8 +4,8 @@
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 10
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=32GB
+#SBATCH --time=04:00:00
+#SBATCH --mem=48GB
 
 # Notification Configuration 
 #SBATCH --mail-type=END                                         
@@ -20,7 +20,7 @@ threads=8
 assembly_jobs=32
 
 module purge
-modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/1.8.0_191" "R/4.3.1-foss-2021b")
+modList=("BWA/0.7.17-GCCcore-11.2.0" "SAMtools/1.17-GCC-11.2.0" "Java/11.0.16" "R/4.3.1-foss-2021b")
 
 usage()
 {

@@ -3,9 +3,9 @@
 #SBATCH -o /hpcfs/users/%u/log/parliament2-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
-#SBATCH -n 16
-#SBATCH --time=1-00:00:00
-#SBATCH --mem=128GB
+#SBATCH -n 24
+#SBATCH --time=12:00:00
+#SBATCH --mem=144GB
 
 # Notification Configuration 
 #SBATCH --mail-type=END
@@ -139,5 +139,34 @@ singularity exec --bind ${outputDir}/in:/home/dnanexus/in,${outputDir}/out:/home
     --genotype
 
 # Clean up a bit
-rm -r ${outputDir}/in
-rm ${outputDir}/ref.fa ${outputDir}/ref.fa.fai # because what I really want is multiple copies of the reference genome in every directory!
+rm -r ${outputDir}/in \
+    ${outputDir}/ref.fa \
+    ${outputDir}/ref.fa.fai \
+    ${outputDir}/*.vcf \
+    ${outputDir}/*.bam \
+    ${outputDir}/*.bai \
+    ${outputDir}/svtype_* \
+    ${outputDir}/*.cmds \
+    ${outputDir}/*.output \
+    ${outputDir}/contigs \
+    ${outputDir}/*.txt \
+    ${outputDir}/*.gff \
+    ${outputDir}/output.* \
+    ${outputDir}/survivor_inputs \
+    ${outputDir}/*.svp
+
+# Compress and index the VCF files
+cd ${outputDir}/out/svtyped_vcfs
+for VCF in *.vcf; do
+    bgzip ${VCF} && tabix ${VCF}.gz
+done
+
+cd ${outputDir}/out/sv_caller_results
+for VCF in *.vcf; do
+    bgzip ${VCF} && tabix ${VCF}.gz
+done
+
+cd ${outputDir}/out
+for VCF in *.vcf; do
+    bgzip ${VCF} && tabix ${VCF}.gz
+done
