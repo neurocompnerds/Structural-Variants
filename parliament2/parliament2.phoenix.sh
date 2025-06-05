@@ -23,8 +23,8 @@ usage()
 echo "# This script takes BAM files as input and calls structural variants with the Parliament2 package.
 # The script will select the right parameters to work with either GRCh37/hg19 or GRCh38/hg38 genome builds.  
 # Requires: An aligned BAM (or CRAM) file (or files), Singularity and the Parliament2 software.
-# NOTE: CRAM or BAM files must be placed in a subdirectory of /hpcfs/groups/phoenix-hpc-neurogenetics
-# NOTE: Parliament2 is not respectful of your source data (it will delete your BAM/CRAMs) so the script will copy your files first then try to clean up after itself.
+# NOTE: This script will copy your input BAM/CRAM files because Parliament2 does not respect source data (it will delete your BAM/CRAMs).
+# Prior to the clean up step the output directory contains lots of very large files so you need plenty of space available before you start this pipeline
 # NOTE: This script is only designed to work with hs38DH genome build so far.  If you have CRAMs and they are not mapped to that build then this won't work.
 #
 # Usage sbatch --array 0-(n-1 bam files) $0 -b listOfbamFiles [-o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
@@ -102,7 +102,7 @@ cp ${neuroDir}/RefSeq/${Genome} ${outputDir}/in/
 cp ${neuroDir}/RefSeq/${Genome}.fai ${outputDir}/in/
 refPath=/home/dnanexus/in # Set the reference path to the container's input directory
 
-# Parliament claims to handle CRAMs but in reality it doesn't.
+# Parliament claims to handle CRAMs but in reality it doesn't do a good job of it.
 case ${extn} in
     "bam"  )
         baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
@@ -138,13 +138,18 @@ singularity exec --bind ${outputDir}/in:/home/dnanexus/in,${outputDir}/out:/home
     --delly_deletion --delly_duplication --delly_inversion --delly_insertion \
     --genotype
 
+# Fix the file move that Parliament does not get right
+mv ${outputDir}/out/manta/results/variants/diploidSV.vcf.gz.tbi ${outputDir}/out/svtyped_vcfs/${outPrefix}.manta.diploidSV.vcf.gz.tbi
+
 # Clean up a bit
 rm -r ${outputDir}/in \
+    ${outputDir}/out/manta/workspace \
     ${outputDir}/ref.fa \
     ${outputDir}/ref.fa.fai \
     ${outputDir}/*.vcf \
     ${outputDir}/*.bam \
     ${outputDir}/*.bai \
+    ${outputDir}/*.bed \
     ${outputDir}/svtype_* \
     ${outputDir}/*.cmds \
     ${outputDir}/*.output \
@@ -158,13 +163,15 @@ rm -r ${outputDir}/in \
 # Compress and index the VCF files
 cd ${outputDir}/out/svtyped_vcfs
 for VCF in *.vcf; do
-    bgzip ${VCF} && tabix ${VCF}.gz
+    bgzip ${VCF} && tabix ${VCF}.gz &
 done
+wait
 
 cd ${outputDir}/out/sv_caller_results
 for VCF in *.vcf; do
-    bgzip ${VCF} && tabix ${VCF}.gz
+    bgzip ${VCF} && tabix ${VCF}.gz &
 done
+wait 
 
 cd ${outputDir}/out
 for VCF in *.vcf; do
