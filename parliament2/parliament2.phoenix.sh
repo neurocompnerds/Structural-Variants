@@ -139,11 +139,11 @@ singularity exec --bind ${outputDir}/in:/home/dnanexus/in,${outputDir}/out:/home
     --genotype
 
 # Fix the file move that Parliament does not get right
-mv ${outputDir}/out/manta/results/variants/diploidSV.vcf.gz.tbi ${outputDir}/out/svtyped_vcfs/${outPrefix}.manta.diploidSV.vcf.gz.tbi
+mv ${outputDir}/manta/results/variants/diploidSV.vcf.gz.tbi ${outputDir}/out/svtyped_vcfs/${outPrefix}.manta.diploidSV.vcf.gz.tbi
 
 # Clean up a bit
 rm -r ${outputDir}/in \
-    ${outputDir}/out/manta/workspace \
+    ${outputDir}/manta/workspace \
     ${outputDir}/ref.fa \
     ${outputDir}/ref.fa.fai \
     ${outputDir}/*.vcf \
