@@ -77,23 +77,23 @@ for mod in "${modList[@]}"; do
 done
 
 # Convert CRAM to BAM and copy files over to the clivar directory
-for bamFile in "${bamList}"; do
-    outPrefix=$(basename "${bamFile}" | sed 's/\.[^.]*$//') # Remove the file extension to get the output prefix
-    inputDir=$(dirname "${bamFile}")
-    extn="${bamFile##*.}"
-    case ${extn} in
-        "bam"  )
-            baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
-            cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/clinsv/"
-            cp "${baiFile}" "${neuroDir}/clinsv/"
-            ;;
-        "cram" )
-            samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/clinsv/${outPrefix}.bam ${bamFile}
-            samtools index ${neuroDir}/clinsv/${outPrefix}.bam
-            ;;
-        * )
-            echo "## ERROR: The file ${bamFile[SLURM_ARRAY_TASK_ID]} is not a BAM or CRAM file."
-            exit 1
-            ;;
-    esac
-done
+readarray -t bamFile < ${bamList}
+outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Remove the file extension to get the output prefix
+inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}")
+extn="${bamFile[SLURM_ARRAY_TASK_ID]##*.}"
+case ${extn} in
+    "bam"  )
+        baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
+        cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/clinsv/"
+        cp "${baiFile}" "${neuroDir}/clinsv/"
+        ;;
+    "cram" )
+        samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/clinsv/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
+        samtools index ${neuroDir}/clinsv/${outPrefix}.bam
+        ;;
+    * )
+        echo "## ERROR: The file ${bamFile[SLURM_ARRAY_TASK_ID]} is not a BAM or CRAM file."
+        exit 1
+        ;;
+esac
+

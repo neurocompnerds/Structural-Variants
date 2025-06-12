@@ -51,7 +51,7 @@ done
 # Check if there is another run in progress. This is not very sophisticated but will work OK with our level of throughput.
 if [ -f "/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock" ]; then
     echo "## INFO: Sorry it looks like there is already a run in progress. Ask neurogenetics slack / email to find out who is running it and get them to let you know when it is done."
-    echo "## INFO: If you are sure that no one is running a job (i.e. you checked) then delete the lock file /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/.clinsv.lock and try again."
+    echo "## INFO: If you are sure that no one is running a job (i.e. you checked) then delete the lock file /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock and try again."
     exit 0
 fi
 touch /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock # Create a lock file to prevent multiple runs at the same time
@@ -72,5 +72,5 @@ fi
 source ${Config}
 
 ## Request some jerbs ##
-bamCopyJob=`sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} ${scriptDir}/clinsv.copy.bams.sh -b ${bamList} -c ${Config} | awk '{print $4}'`
-sbatch --dependency=afterok:${bamCopyJob} --export=Config=${Config} ${scriptDir}/clinsv.run.sh -c ${Config}
+bamCopyJob=`sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} ${scriptDir}/clinsv/clinsv.copy.bams.sh -b ${bamList} -c ${Config} | cut -d" " -f4`
+sbatch --dependency=afterok:${bamCopyJob} --export=Config=${Config} ${scriptDir}/clinsv/clinsv.run.sh -c ${Config}
