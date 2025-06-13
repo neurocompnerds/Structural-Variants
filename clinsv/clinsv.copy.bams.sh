@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J clinSVcp
-#SBATCH -o /hpcfs/users/%u/log/clinsv-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/clinSVcp-slurm-%j.out
 
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
@@ -83,11 +83,19 @@ inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}")
 extn="${bamFile[SLURM_ARRAY_TASK_ID]##*.}"
 case ${extn} in
     "bam"  )
+        if [ -f "${neuroDir}/clinsv/${outPrefix}.bam" ]; then
+            echo "## INFO: The file ${neuroDir}/clinsv/${outPrefix}.bam already exists so I'm going to use that to save some time."
+            exit 0
+        fi
         baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
         cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/clinsv/"
         cp "${baiFile}" "${neuroDir}/clinsv/"
         ;;
     "cram" )
+        if [ -f "${neuroDir}/clinsv/${outPrefix}.bam" ]; then
+            echo "## INFO: The file ${neuroDir}/clinsv/${outPrefix}.bam already exists so I'm going to use that to save some time."
+            exit 0
+        fi        
         samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/clinsv/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
         samtools index ${neuroDir}/clinsv/${outPrefix}.bam
         ;;
@@ -96,4 +104,3 @@ case ${extn} in
         exit 1
         ;;
 esac
-
