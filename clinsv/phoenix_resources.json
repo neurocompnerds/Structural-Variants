@@ -1,0 +1,27 @@
+{
+    "bigwig":{
+            "createWigs": "walltime=6:00:00,ncpus=22,mem=16GB",
+            "q0": "walltime=2:00:00,ncpus=1,mem=144GB,jobfs=100GB",
+            "q20": "walltime=2:00:00,ncpus=1,mem=144GB,jobfs=100GB",
+            "mq" : "walltime=5:00:00,ncpus=1,mem=144GB,jobfs=100GB"
+    },
+    "lumpy":{
+            "caller": "walltime=22:00:00,ncpus=22,mem=144GB,jobfs=300GB",
+            "depth": "walltime=8:00:00,ncpus=16,mem=64GB,jobfs=50GB"
+    },
+    "cnvnator":{
+            "caller": "walltime=6:00:00,mem=64GB,ncpus=22,jobfs=300GB"
+    },
+    "annotate":{
+            "main":"walltime=10:00:00,mem=32GB,ncpus=4,jobfs=20GB"
+    },
+    "prioritize":{
+            "main": "walltime=1:00:00,mem=16GB,ncpus=1,jobfs=20GB"
+    },
+    "qc":{
+            "main": "walltime=01:00:00,mem=16GB,ncpus=1,jobfs=20GB"
+    }
+
+
+
+}

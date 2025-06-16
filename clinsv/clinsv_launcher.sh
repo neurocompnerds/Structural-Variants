@@ -70,6 +70,9 @@ if [ -z "${Config}" ]; then # If no config file specified use the default
 fi
 
 source ${Config}
+if [ ! -f "/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json" ]; then # Check if the resources file is in the clinsv folder
+    cp ${defaultResourcesJSON} /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json 
+fi
 
 ## Request some jerbs ##
 bamCopyJob=`sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} ${scriptDir}/clinsv/clinsv.copy.bams.sh -b ${bamList} -c ${Config} | cut -d" " -f4`
