@@ -81,7 +81,7 @@ ${progDir}/${progName} /app/clinsv/bin/clinsv \
 -p /app/project_folder/ \
 -ref /app/ref-data/refdata-b38 \
 -i "/app/input/*.bam" \
--j /app/project_folder/phoenix_resources.json \
+-j /app/input/phoenix_resources.json \
 -w 
 
 if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then # Check if the lock file exists
