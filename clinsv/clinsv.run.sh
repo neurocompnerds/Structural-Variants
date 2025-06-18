@@ -5,7 +5,7 @@
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 24
-#SBATCH --time=48:00:00
+#SBATCH --time=18:00:00
 #SBATCH --mem=144GB
 
 # Notification Configuration 
@@ -60,14 +60,15 @@ if [ -z "${Config}" ]; then # If no config file specified use the default
     Config=${scriptDir}/configs/hs38DH.SV_ClinSV.phoenix.cfg
     echo "## INFO: Using the default config ${Config}"
 fi
-if [ ! -f "/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json" ]; then # Check if the config file exists
-    cp ${defaultResourcesJSON} /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json
-fi
-if [ ! -d "${neuroDir}/clinsv/test_run" ]; then # Check if the output directory exists
-    mkdir -p ${neuroDir}/clinsv/test_run
-fi
 
 source ${Config}
+
+if [ ! -f "${neuroDir}/clinsv/phoenix_resources.json" ]; then # Check if the config file exists
+    cp "${defaultResourcesJSON}" "${neuroDir}/clinsv/phoenix_resources.json"
+fi
+if [ ! -d "${neuroDir}/clinsv/test_run" ]; then # Check if the output directory exists
+    mkdir -p "${neuroDir}/clinsv/test_run"
+fi
 
 ## Load modules ##
 for mod in "${modList[@]}"; do
@@ -76,7 +77,7 @@ done
 
 
 ## Launch ClinSV ##
-singularity exec --bind $refPath:/app/ref-data/refdata-b38,$neuroDir/clinsv/test_run:/app/project_folder,$neuroDir/clinsv:/app/input \
+singularity exec --bind ${refPath}:/app/ref-data/refdata-b38,${neuroDir}/clinsv/test_run:/app/project_folder,$neuroDir/clinsv:/app/input \
 ${progDir}/${progName} /app/clinsv/bin/clinsv \
 -p /app/project_folder/ \
 -ref /app/ref-data/refdata-b38 \
@@ -85,5 +86,5 @@ ${progDir}/${progName} /app/clinsv/bin/clinsv \
 -w 
 
 if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then # Check if the lock file exists
-    rm $neuroDir/clinsv/clinsv.lock # Remove the lock file to allow other runs to proceed
+    rm "${neuroDir}/clinsv/clinsv.lock" # Remove the lock file to allow other runs to proceed
 fi

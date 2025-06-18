@@ -48,13 +48,25 @@ while [ "$1" != "" ]; do
 done
 
 ## Pre-flight checks ##
+if [ -z "${Config}" ]; then # If no config file specified use the default
+    Config="${scriptDir}/configs/hs38DH.SV_ClinSV.phoenix.cfg"
+    echo "## INFO: Using the default config ${Config}"
+fi
+if [ ! -f "${Config}" ]; then
+    echo "## ERROR: Config file ${Config} does not exist."
+    exit 1
+fi
+
+source "${Config}"
+
 # Check if there is another run in progress. This is not very sophisticated but will work OK with our level of throughput.
-if [ -f "/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock" ]; then
-    echo "## INFO: Sorry it looks like there is already a run in progress. Ask neurogenetics slack / email to find out who is running it and get them to let you know when it is done."
-    echo "## INFO: If you are sure that no one is running a job (i.e. you checked) then delete the lock file /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock and try again."
+if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then
+    echo "## INFO: Sorry it looks like there is already a run in progress. You can check if the pipeline is running by searching for the job in the queue e.g. squeue | grep clinSV." 
+    echo "You can ask via neurogenetics slack or email the user associated with the job get them to let you know when it is done."
+    echo "If you are sure that no one is running a job (i.e. you checked) then delete the lock file e.g. rm ${neuroDir}/clinsv/clinsv.lock and try again."
     exit 0
 fi
-touch /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/clinsv.lock # Create a lock file to prevent multiple runs at the same time
+touch ${neuroDir}/clinsv/clinsv.lock # Create a lock file to prevent multiple runs at the same time
 
 if [ -z "${bamList}" ]; then # If no list of BAM / CRAM files was provided then do not proceed
     usage
@@ -62,18 +74,16 @@ if [ -z "${bamList}" ]; then # If no list of BAM / CRAM files was provided then 
     exit 1
 fi
 fileCount=$(wc -l < "${bamList}")
+if [ "${fileCount}" -eq 0 ]; then
+    echo "## ERROR: The BAM/CRAM list file is empty. Did you provide the correct file?"
+    exit 1
+fi
 jobCount=$((${fileCount} - 1)) # SLURM_ARRAY_TASK_ID starts at 0 so we need to subtract 1 from the file count
 
-if [ -z "${Config}" ]; then # If no config file specified use the default
-    Config=${scriptDir}/configs/hs38DH.SV_ClinSV.phoenix.cfg
-    echo "## INFO: Using the default config ${Config}"
-fi
-
-source ${Config}
-if [ ! -f "/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json" ]; then # Check if the resources file is in the clinsv folder
-    cp ${defaultResourcesJSON} /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/phoenix_resources.json 
+if [ ! -f "${neuroDir}/clinsv/phoenix_resources.json" ]; then # Check if the resources file is in the clinsv folder
+    cp "${defaultResourcesJSON}" "${neuroDir}/clinsv/phoenix_resources.json"
 fi
 
 ## Request some jerbs ##
-bamCopyJob=`sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} ${scriptDir}/clinsv/clinsv.copy.bams.sh -b ${bamList} -c ${Config} | cut -d" " -f4`
-sbatch --dependency=afterok:${bamCopyJob} --export=Config=${Config} ${scriptDir}/clinsv/clinsv.run.sh -c ${Config}
+bamCopyJob=$(sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} "${scriptDir}/clinsv/clinsv.copy.bams.sh" -b "${bamList}" -c "${Config}" | cut -d" " -f4)
+sbatch --dependency=afterok:${bamCopyJob} --export=Config=${Config} "${scriptDir}/clinsv/clinsv.run.sh" -c "${Config}"

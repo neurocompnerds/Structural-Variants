@@ -65,11 +65,11 @@ if [ -z "${bamList}" ]; then # If no list of BAM / CRAM files was provided then 
 fi
 
 if [ -z "${Config}" ]; then # If no config file specified use the default
-    Config=${scriptDir}/configs/hs38DH.SV_ClinSV.phoenix.cfg
+    Config="${scriptDir}/configs/hs38DH.SV_ClinSV.phoenix.cfg"
     echo "## INFO: Using the default config ${Config}"
 fi
 
-source ${Config}
+source "${Config}"
 
 ## Load modules ##
 for mod in "${modList[@]}"; do
@@ -77,7 +77,7 @@ for mod in "${modList[@]}"; do
 done
 
 # Convert CRAM to BAM and copy files over to the clivar directory
-readarray -t bamFile < ${bamList}
+readarray -t bamFile < "${bamList}"
 outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Remove the file extension to get the output prefix
 inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}")
 extn="${bamFile[SLURM_ARRAY_TASK_ID]##*.}"
@@ -87,7 +87,7 @@ case ${extn} in
             echo "## INFO: The file ${neuroDir}/clinsv/${outPrefix}.bam already exists so I'm going to use that to save some time."
             exit 0
         fi
-        baiFile=$(find ${inputDir}/*.bai | grep -w ${outPrefix})
+        baiFile=$(find "${inputDir}/*.bai" | grep -w "${outPrefix}")
         cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/clinsv/"
         cp "${baiFile}" "${neuroDir}/clinsv/"
         ;;
@@ -96,8 +96,8 @@ case ${extn} in
             echo "## INFO: The file ${neuroDir}/clinsv/${outPrefix}.bam already exists so I'm going to use that to save some time."
             exit 0
         fi        
-        samtools view -T ${neuroDir}/RefSeq/${Genome} -b -@8 -o ${neuroDir}/clinsv/${outPrefix}.bam ${bamFile[SLURM_ARRAY_TASK_ID]}
-        samtools index ${neuroDir}/clinsv/${outPrefix}.bam
+        samtools view -T "${neuroDir}/RefSeq/${Genome}" -b -@8 -o "${neuroDir}/clinsv/${outPrefix}.bam" "${bamFile[SLURM_ARRAY_TASK_ID]}"
+        samtools index "${neuroDir}/clinsv/${outPrefix}.bam"
         ;;
     * )
         echo "## ERROR: The file ${bamFile[SLURM_ARRAY_TASK_ID]} is not a BAM or CRAM file."
