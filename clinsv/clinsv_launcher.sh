@@ -89,7 +89,7 @@ if [ ! -f "${neuroDir}/clinsv/phoenix_resources.json" ]; then # Check if the res
 fi
 
 if [ -z "${outDir}" ]; then # If no output directory is specified use the default
-    outDir="${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)"
+    outDir=${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)
     echo "## INFO: Using the default output directory ${outDir}"
 fi
 if [ ! -d "${outDir}" ]; then # Check if the output directory exists

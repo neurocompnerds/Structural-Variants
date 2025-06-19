@@ -80,14 +80,14 @@ done
 readarray -t bamFile < "${bamList}"
 outPrefix=$(basename "${bamFile[SLURM_ARRAY_TASK_ID]}" | sed 's/\.[^.]*$//') # Remove the file extension to get the output prefix
 inputDir=$(dirname "${bamFile[SLURM_ARRAY_TASK_ID]}")
-extn="${bamFile[SLURM_ARRAY_TASK_ID]##*.}"
+extn=${bamFile[SLURM_ARRAY_TASK_ID]##*.}
 case ${extn} in
     "bam"  )
         if [ -f "${neuroDir}/clinsv/${outPrefix}.bam" ]; then
             echo "## INFO: The file ${neuroDir}/clinsv/${outPrefix}.bam already exists so I'm going to use that to save some time."
             exit 0
         fi
-        baiFile=$(find "${inputDir}/*.bai" | grep -w "${outPrefix}")
+        baiFile=$(find ${inputDir}/*.bai | grep -w "${outPrefix}")
         cp "${bamFile[SLURM_ARRAY_TASK_ID]}" "${neuroDir}/clinsv/"
         cp "${baiFile}" "${neuroDir}/clinsv/"
         ;;

@@ -16,7 +16,7 @@
 # This is the master script that coordinates job submission for the neurogenetics ClinSV structural variant pipeline.
 ## Set hard-coded paths and define functions ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
-modList=("Singularity/3.10.5" "SAMtools/1.17-GCC-11.2.0" "BCFtools/1.17-GCC-11.2.0")
+modList=("Singularity/3.10.5")
 
 usage()
 {
@@ -71,7 +71,7 @@ if [ ! -d "${neuroDir}/clinsv/test_run" ]; then # Check if the output directory 
     mkdir -p "${neuroDir}/clinsv/test_run"
 fi
 if [ -z "${outDir}" ]; then # If no output directory is specified use the default
-    outDir="${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)"
+    outDir=${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)
     echo "## INFO: Using the default output directory ${outDir}"
 fi
 if [ ! -d "${outDir}" ]; then # Check if the output directory exists
@@ -94,13 +94,13 @@ ${progDir}/${progName} /app/clinsv/bin/clinsv \
 
 # Clean up and reset for the next run
 if [ -f "${neuroDir}/clinsv/test_run/results/SV-CNV.RARE_PASS_GENE.xlsx"]; then # Proxy test for run completion
-    rm "${neuroDir}/clinsv/*.bam" "${neuroDir}/clinsv/*.bai" # Remove the input BAM files to save space
+    rm ${neuroDir}/clinsv/*.bam ${neuroDir}/clinsv/*.bai # Remove the input BAM files to save space
 else
     echo "## ERROR: ClinSV did not produce the expected output file. Looks like something went wrong you may need to check the logs for errors."
     rm "${neuroDir}/clinsv/clinsv.lock" # Remove the lock file to allow other runs to proceed
     exit 1
 fi
-mv "${neuroDir}/clinsv/test_run/*" "${outDir}/" # Move the output files to the output directory
+mv ${neuroDir}/clinsv/test_run/* "${outDir}/" # Move the output files to the output directory
 echo "## INFO: ClinSV run completed. Results are in ${outDir}"
 
 if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then # Check if the lock file exists
