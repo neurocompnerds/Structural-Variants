@@ -5,7 +5,7 @@ logDir="/hpcfs/users/${USER}/log"
 
 if [ ! -d "${logDir}" ]; then
     mkdir -p ${logDir}
-    echo "## INFO: New log directory created, you'll find the log information from this slurm job here: ${logDir}"
+    echo "## INFO: New log directory created, you'll find the log information from your slurm jobs here: ${logDir}"
 fi
 
 usage()
@@ -15,10 +15,11 @@ echo "# This is the master script that coordinates job submission for analysis o
 # Requires: A short list of aligned CRAM or BAM file 
 # Note: All output is written to /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/test_run
 #
-# Usage sbatch $0 -b /path/to/input/bam-file-list.txt [ -c /path/to/config.cfg ] | [ - h | --help ]
+# Usage sbatch $0 -b /path/to/input/bam-file-list.txt [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
 # -b	REQUIRED. Path to the file containing list of CRAM/BAM files (with their full path) to be processed.  The file should contain one CRAM/BAM file per line.
+# -o	OPTIONAL. /path/to/output. A default output directory will be used if this is not specified.
 # -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
@@ -37,6 +38,9 @@ while [ "$1" != "" ]; do
                         ;;
         -b )            shift
                         bamList=$1
+                        ;;
+        -o )            shift
+                        outDir=$1
                         ;;
         -h | --help )   usage
                         exit 0
@@ -84,6 +88,14 @@ if [ ! -f "${neuroDir}/clinsv/phoenix_resources.json" ]; then # Check if the res
     cp "${defaultResourcesJSON}" "${neuroDir}/clinsv/phoenix_resources.json"
 fi
 
+if [ -z "${outDir}" ]; then # If no output directory is specified use the default
+    outDir="${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)"
+    echo "## INFO: Using the default output directory ${outDir}"
+fi
+if [ ! -d "${outDir}" ]; then # Check if the output directory exists
+    mkdir -p "${outDir}"
+fi
+
 ## Request some jerbs ##
-bamCopyJob=$(sbatch --array 0-${jobCount} --export=Config=${Config},bamList=${bamList} "${scriptDir}/clinsv/clinsv.copy.bams.sh" -b "${bamList}" -c "${Config}" | cut -d" " -f4)
-sbatch --dependency=afterok:${bamCopyJob} --export=Config=${Config} "${scriptDir}/clinsv/clinsv.run.sh" -c "${Config}"
+bamCopyJob=$(sbatch --array 0-${jobCount} --export=Config="${Config}",bamList="${bamList}" "${scriptDir}/clinsv/clinsv.copy.bams.sh" -b "${bamList}" -c "${Config}" | cut -d" " -f4)
+sbatch --dependency=afterok:${bamCopyJob} --export=Config="${Config}",outDir="${outDir}" "${scriptDir}/clinsv/clinsv.run.sh" -c "${Config}" -o "${outDir}"

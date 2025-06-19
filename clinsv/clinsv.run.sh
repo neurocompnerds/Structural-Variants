@@ -16,8 +16,6 @@
 # This is the master script that coordinates job submission for the neurogenetics ClinSV structural variant pipeline.
 ## Set hard-coded paths and define functions ##
 scriptDir="/hpcfs/groups/phoenix-hpc-neurogenetics/scripts/git/neurocompnerds/Structural-Variants"
-outputClinsvDir="/hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/test_run"
-logDir="/hpcfs/users/${USER}/log"
 modList=("Singularity/3.10.5" "SAMtools/1.17-GCC-11.2.0" "BCFtools/1.17-GCC-11.2.0")
 
 usage()
@@ -26,10 +24,10 @@ echo "# This script runs analysis of one or many Illumina whole genomes using Cl
 # Requires: BAM or CRAM files, Singularity and the ClinSV software. 
 # Note: All output is written to /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/test_run
 #
-# Usage sbatch $0 [ -c /path/to/config.cfg ] | [ - h | --help ]
+# Usage sbatch $0 [ -o /path/to/output -c /path/to/config.cfg ] | [ - h | --help ]
 #
 # Options
-# -b	REQUIRED. Path to the file containing a list of CRAM/BAM files (with their full path) to be processed.  The file should contain one CRAM/BAM file per line.
+# -o	OPTIONAL. /path/to/output. A default output directory will be used if this is not specified.
 # -c	OPTIONAL. /path/to/config.cfg. A default config will be used if this is not specified.
 # -h or --help	Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 # 
@@ -45,6 +43,9 @@ while [ "$1" != "" ]; do
     case $1 in
         -c )            shift
                         Config=$1
+                        ;;
+        -o )            shift
+                        outDir=$1
                         ;;
         -h | --help )   usage
                         exit 0
@@ -69,21 +70,38 @@ fi
 if [ ! -d "${neuroDir}/clinsv/test_run" ]; then # Check if the output directory exists
     mkdir -p "${neuroDir}/clinsv/test_run"
 fi
+if [ -z "${outDir}" ]; then # If no output directory is specified use the default
+    outDir="${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)"
+    echo "## INFO: Using the default output directory ${outDir}"
+fi
+if [ ! -d "${outDir}" ]; then # Check if the output directory exists
+    mkdir -p "${outDir}"
+fi
 
 ## Load modules ##
 for mod in "${modList[@]}"; do
     module load ${mod}
 done
 
-
 ## Launch ClinSV ##
-singularity exec --bind ${refPath}:/app/ref-data/refdata-b38,${neuroDir}/clinsv/test_run:/app/project_folder,$neuroDir/clinsv:/app/input \
+singularity exec --bind ${refPath}:/app/ref-data/refdata-b38,${neuroDir}/clinsv/test_run:/app/project_folder,${neuroDir}/clinsv:/app/input \
 ${progDir}/${progName} /app/clinsv/bin/clinsv \
 -p /app/project_folder/ \
 -ref /app/ref-data/refdata-b38 \
 -i "/app/input/*.bam" \
 -j /app/input/phoenix_resources.json \
 -w 
+
+# Clean up and reset for the next run
+if [ -f "${neuroDir}/clinsv/test_run/results/SV-CNV.RARE_PASS_GENE.xlsx"]; then # Proxy test for run completion
+    rm "${neuroDir}/clinsv/*.bam" "${neuroDir}/clinsv/*.bai" # Remove the input BAM files to save space
+else
+    echo "## ERROR: ClinSV did not produce the expected output file. Looks like something went wrong you may need to check the logs for errors."
+    rm "${neuroDir}/clinsv/clinsv.lock" # Remove the lock file to allow other runs to proceed
+    exit 1
+fi
+mv "${neuroDir}/clinsv/test_run/*" "${outDir}/" # Move the output files to the output directory
+echo "## INFO: ClinSV run completed. Results are in ${outDir}"
 
 if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then # Check if the lock file exists
     rm "${neuroDir}/clinsv/clinsv.lock" # Remove the lock file to allow other runs to proceed

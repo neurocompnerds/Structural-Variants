@@ -22,7 +22,7 @@ usage()
 {
 echo "# This is a helper script that coordinates data ingress for analysis of one or many Illumina whole genomes using ClinSV.
 # The script should be launched using the clinsv_launcher.sh script, but you can run it independently if needed.  
-# Requires: A short list of aligned CRAM or BAM file 
+# Requires: A short list of aligned CRAM or BAM files
 # Note: All output is written to /hpcfs/groups/phoenix-hpc-neurogenetics/clinsv/test_run
 #
 # Usage sbatch --array 0-(number of bam files - 1) $0 -b /path/to/input/bam-file-list.txt [ -c /path/to/config.cfg ] | [ - h | --help ]
