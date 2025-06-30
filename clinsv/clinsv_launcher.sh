@@ -90,10 +90,7 @@ fi
 
 if [ -z "${outDir}" ]; then # If no output directory is specified use the default
     outDir=${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)
-    echo "## INFO: Using the default output directory ${outDir}"
-fi
-if [ ! -d "${outDir}" ]; then # Check if the output directory exists
-    mkdir -p "${outDir}"
+    echo "## INFO: If the run is successful, then you will find your data in this output directory ${outDir}"
 fi
 
 ## Request some jerbs ##

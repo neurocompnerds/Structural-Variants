@@ -90,7 +90,7 @@ ${progDir}/${progName} /app/clinsv/bin/clinsv \
 -w 
 
 # Clean up and reset for the next run
-if [ -f "${neuroDir}/clinsv/test_run/results/SV-CNV.RARE_PASS_GENE.xlsx"]; then # Proxy test for run completion
+if [ -f "${neuroDir}/clinsv/test_run/results/SV-CNV.RARE_PASS_GENE.xlsx" ]; then # Proxy test for run completion
     rm ${neuroDir}/clinsv/*.bam ${neuroDir}/clinsv/*.bai # Remove the input BAM files to save space
 else
     echo "## ERROR: ClinSV did not produce the expected output file. Looks like something went wrong you may need to check the logs for errors."
