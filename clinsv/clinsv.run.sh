@@ -5,7 +5,7 @@
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 24
-#SBATCH --time=18:00:00
+#SBATCH --time=56:00:00
 #SBATCH --mem=144GB
 
 # Notification Configuration 
@@ -74,9 +74,6 @@ if [ -z "${outDir}" ]; then # If no output directory is specified use the defaul
     outDir=${neuroDir}/variants/SV/clinsv/clinsv_$(date +%Y%m%d_%H%M%S)
     echo "## INFO: Using the default output directory ${outDir}"
 fi
-if [ ! -d "${outDir}" ]; then # Check if the output directory exists
-    mkdir -p "${outDir}"
-fi
 
 ## Load modules ##
 for mod in "${modList[@]}"; do
@@ -97,9 +94,16 @@ if [ -f "${neuroDir}/clinsv/test_run/results/SV-CNV.RARE_PASS_GENE.xlsx"]; then 
     rm ${neuroDir}/clinsv/*.bam ${neuroDir}/clinsv/*.bai # Remove the input BAM files to save space
 else
     echo "## ERROR: ClinSV did not produce the expected output file. Looks like something went wrong you may need to check the logs for errors."
+    echo "## INFO: If the run failed due to a timeout, try running it again with a longer time limit and without clearing the contents of ${neuroDir}/clinsv."
     rm "${neuroDir}/clinsv/clinsv.lock" # Remove the lock file to allow other runs to proceed
     exit 1
 fi
+
+# If you pass the tests above then make the output directory if it does not exist
+if [ ! -d "${outDir}" ]; then 
+    mkdir -p "${outDir}"
+fi
+
 mv ${neuroDir}/clinsv/test_run/* "${outDir}/" # Move the output files to the output directory
 echo "## INFO: ClinSV run completed. Results are in ${outDir}"
 
