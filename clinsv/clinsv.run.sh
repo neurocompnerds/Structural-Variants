@@ -105,6 +105,7 @@ if [ ! -d "${outDir}" ]; then
 fi
 
 mv ${neuroDir}/clinsv/test_run/* "${outDir}/" # Move the output files to the output directory
+rm -rf ${neuroDir}/clinsv/test_run/* # Clean up the test run directory
 echo "## INFO: ClinSV run completed. Results are in ${outDir}"
 
 if [ -f "${neuroDir}/clinsv/clinsv.lock" ]; then # Check if the lock file exists
