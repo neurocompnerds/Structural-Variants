@@ -1,0 +1,128 @@
+Sample=Plate205F1
+InputFile=191025_A00692_0030_TL1909943_Plate205F1_MAN-20191021_NEXTERAFLEXWGS_L002_R1.fastq.gz
+
+#Stage align
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+set -o pipefail
+mkdir "/ibm/hpcfs1/tmp/a4dd06a4-d06e-483e-85c5-ae53de696cc6"
+export PATH="/hpc/bpipeLibrary/shared/cpipe-wgs/tools/groovy/3.0.10/bin:$PATH"
+time /hpc/bpipeLibrary/shared/cpipe-wgs/tools/groovy-ngs-utils/1.0.8/bin/gngstool SplitFASTQ  \
+-r1 /misc/cyto1-archie_main/manual_data_transfers/transfer_20230927/191025_A00692_0030_TL1909943_Plate205F1_MAN-20191021_NEXTERAFLEXWGS_L002_R2.fastq.gz \
+-r2 /misc/cyto1-archie_main/manual_data_transfers/transfer_20230927/191025_A00692_0030_TL1909943_Plate205F1_MAN-20191021_NEXTERAFLEXWGS_L002_R1.fastq.gz \
+-s 1,4 |\
+/hpc/bpipeLibrary/shared/cpipe-wgs/tools/bwa/0.7.13/bwa mem -p -M -t 8 -k 19 \
+-R "@RG\tID:Plate205F1_L002\tPL:ILLUMINA\tPU:1\tLB:Plate205F1_TL1909943\tSM:Plate205F1" \
+/hpc/bpipeLibrary/shared/cpipe-wgs/hg38/v0/Homo_sapiens_assembly38.fasta - |\
+samtools sort \
+-m 2G --threads 2 \
+-o align/Plate205F1_d3fdbde4dd83ec55185f63cf337be30b65259d49_L002_1.bam \
+-T "/ibm/hpcfs1/tmp/a4dd06a4-d06e-483e-85c5-ae53de696cc6/bamsort"
+
+rm -r "/ibm/hpcfs1/tmp/a4dd06a4-d06e-483e-85c5-ae53de696cc6"
+
+# Stage dedup_sambamba (Plate59D7)
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+set -o pipefail
+export TMPDIR="/tmp"
+sambamba markdup -r \
+--sort-buffer-size=9096 \
+--overflow-list-size=1800000 \
+-t 4 \
+align/Plate59D7_b1a6e9ee5da590d8eb5c3ea58158677f40db5400_L002.bam \
+align/Plate59D7_b1a6e9ee5da590d8eb5c3ea58158677f40db5400_L002_1.bam \
+align/Plate59D7_b1a6e9ee5da590d8eb5c3ea58158677f40db5400_L002_2.bam \
+align/Plate59D7_b1a6e9ee5da590d8eb5c3ea58158677f40db5400_L002_3.bam \
+align/Plate59D7_506bde2c8d70e401ba2d30e941d7a4d5e6b6c1a4_L001.bam \
+align/Plate59D7_506bde2c8d70e401ba2d30e941d7a4d5e6b6c1a4_L001_1.bam \
+align/Plate59D7_506bde2c8d70e401ba2d30e941d7a4d5e6b6c1a4_L001_2.bam \
+align/Plate59D7_506bde2c8d70e401ba2d30e941d7a4d5e6b6c1a4_L001_3.bam \
+align/Plate59D7_67ebd68a8a59a18f5d74b993d2bda2e5cef586ff_L004.bam \
+align/Plate59D7_67ebd68a8a59a18f5d74b993d2bda2e5cef586ff_L004_1.bam \
+align/Plate59D7_67ebd68a8a59a18f5d74b993d2bda2e5cef586ff_L004_2.bam \
+align/Plate59D7_67ebd68a8a59a18f5d74b993d2bda2e5cef586ff_L004_3.bam \
+align/Plate59D7_756da804ed904588939f5b461be6cf2925818d31_L003.bam \
+align/Plate59D7_756da804ed904588939f5b461be6cf2925818d31_L003_1.bam \
+align/Plate59D7_756da804ed904588939f5b461be6cf2925818d31_L003_2.bam \
+align/Plate59D7_756da804ed904588939f5b461be6cf2925818d31_L003_3.bam \
+align/Plate59D7.merge.dedup.bam 2>&1 | tee align/   .txt
+
+#Collect metrics
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+echo "## METRICS CLASS	picard.sam.DuplicationMetrics" > align/QLD06A-Lib2.merge.dedup.metrics
+echo "PERCENT_DUPLICATION" >> align/QLD06A-Lib2.merge.dedup.metrics
+set +o pipefail
+export TOTALPAIRS=`cat align/QLD06A-Lib2.merge.dedup.txt |\
+grep -oE "sorted .* end pairs" |\
+awk '{print $2}'`
+export DUPREADS=`cat align/QLD06A-Lib2.merge.dedup.txt |\
+grep -oE "found .* duplicates" | awk '{print $2}'`
+export PERCDUPL=`echo "scale=2 ; ${DUPREADS} * 100 / (${TOTALPAIRS} * 2)" | bc | awk '{ printf "%0.2f", $0 }'`
+echo "${PERCDUPL}" >> align/QLD06A-Lib2.merge.dedup.metrics
+
+# Stage convert_npz (QLD06A-Lib2)
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+wisecondorx convert align/QLD06A-Lib2.merge.dedup.bam wc/QLD06A-Lib2.merge.dedup.npz
+
+# Stage mosdepth (QLD06A-Lib2)
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+mosdepth qc/QLD06A-Lib2.depth -n  -x align/QLD06A-Lib2.merge.dedup.bam
+
+# Stage create_reference
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+wisecondorx newref \
+--yfrac 0.0025 \
+wc/Plate338D4.merge.dedup.npz \
+wc/Plate338D2.merge.dedup.npz \
+wc/Plate338C3.merge.dedup.npz \
+wc/Plate338E3.merge.dedup.npz \
+wc/Plate338F4.merge.dedup.npz \
+wc/Plate338C4.merge.dedup.npz \
+wc/Plate338C2.merge.dedup.npz \
+wc/Plate338A5.merge.dedup.npz \
+wc/Plate338E7.merge.dedup.npz \
+wc/Plate338D7.merge.dedup.npz \
+wc/controls.ref.npz
+
+# Stage predict CNV
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+wisecondorx predict \
+--plot \
+--add-plot-title  \
+--bed \
+--gender M \
+wc/QLD06A-Lib2.merge.dedup.npz \
+wc/controls.ref.npz \
+cnvs/QLD06A-Lib2
+
+
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'
+echo "Zipping reports from cnvs/results.html"
+zip -r results/dd9c3de591078e26f15d41962511906dda5b7a43_cnvs.zip \
+cnvs/results.html \
+cnvs/*.plots/chr{X,Y}.png
+
+# Stage summarize_qc
+export JAVA_HOME='/hpc/bpipeLibrary/shared/sdkman/candidates/java/11.0.28-tem'; 
+
+unset GROOVY_HOME
+
+
+GROOVY_CMD=$(cat <<XXXX
+
+   List summaries = ["qc/Plate205F1.depth.mosdepth.summary.txt","qc/Plate59D7.depth.mosdepth.summary.txt","qc/QLD02A-Lib2.depth.mosdepth.summary.txt","qc/QLD06A-Lib2.depth.mosdepth.summary.txt","qc/Plate205F1.depth.mosdepth.summary.txt","qc/Plate59D7.depth.mosdepth.summary.txt","qc/QLD02A-Lib2.depth.mosdepth.summary.txt","qc/QLD06A-Lib2.depth.mosdepth.summary.txt","qc/Plate205F1.depth.mosdepth.summary.txt","qc/Plate59D7.depth.mosdepth.summary.txt","qc/QLD02A-Lib2.depth.mosdepth.summary.txt","qc/QLD06A-Lib2.depth.mosdepth.summary.txt"]
+   def qcs = summaries.sum { summary ->
+       def sample = summary.replaceAll('.mosdepth.summary.txt','')
+       new graxxia.TSV(summary).toListMap().grep { it.chrom == 'total' }.collect {
+           it.remove('chrom')
+           it.remove('min')
+           it.remove('bases')
+           it.remove('length')
+           it = [ sample: sample] + it
+       }
+   }
+   gngs.Utils.table(qcs)
+
+XXXX
+)
+
+JAVA_OPTS='-noverify ' /hpc/bpipeLibrary/shared/cpipe-wgs/pipeline/../tools/groovy/3.0.10/bin/groovy -cp /hpc/bpipeLibrary/shared/cpipe-wgs/pipeline/classes:/hpc/bpipeLibrary/shared/cpipe-wgs/tools/groovy-ngs-utils/1.0.8/groovy-ngs-utils.jar:/hpc/bpipeLibrary/shared/cpipe-wgs/tools/ggip/src/main/groovy:/hpc/bpipeLibrary/shared/ximmer/src/main/groovy:/hpc/bpipeLibrary/shared/archie/archie-common/build/libs/archie-common-all.jar -e "$GROOVY_CMD"
