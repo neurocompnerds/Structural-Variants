@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J mergeDedupBAM
-#SBATCH -o /hpcfs/users/%u/log/mapSortDedup-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/mergeDedupBAM-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 25
@@ -65,7 +65,7 @@ if [ -z "${sampleFile}" ]; then # If no sample file specified, display usage and
     exit 1
 fi
 
-Sample=$((grep -v "^#" ${sampleFile} | cut -f1)) 
+readarray -t Sample <<< $(grep -v "^#" ${sampleFile} | cut -f1) 
 
 if [ -z "${enviroCfg}" ]; then # If there is no config file then use the default.
     whereAmI="$(dirname "$(readlink -f "$0")")" # Assumes that the script is linked to the git repo and the driectory structure is not broken

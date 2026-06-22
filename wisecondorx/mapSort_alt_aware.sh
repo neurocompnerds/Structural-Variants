@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J MapSort
-#SBATCH -o /hpcfs/users/%u/log/mapSortDedup-slurm-%j.out
+#SBATCH -o /hpcfs/users/%u/log/mapSort-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 25
@@ -86,12 +86,12 @@ fi
 ## Parse the input file ##
 # This assumes you use the provided template and keep all of the columns in the right order.
 
-Sample=$((grep -v "^#" ${inputFile} | cut -f1)) 
-seqFile1=$((grep -v "^#" ${inputFile} | cut -f2)) 
-seqFile2=$((grep -v "^#" ${inputFile} | cut -f3)) 
-LB=$(grep -v "^#" ${inputFile} | cut -f6) # Library information (optional)
-PL=$(grep -v "^#" ${inputFile} | cut -f7) # Platform information (optional)
-PU=$(grep -v "^#" ${inputFile} | cut -f8) # Platform unit information (optional)
+readarray -t Sample <<< $(grep -v "^#" ${inputFile} | cut -f1) 
+readarray -t seqFile1 <<< $(grep -v "^#" ${inputFile} | cut -f2) 
+readarray -t seqFile2 <<< $(grep -v "^#" ${inputFile} | cut -f3) 
+readarray -t LB <<< $(grep -v "^#" ${inputFile} | cut -f6) # Library information (optional)
+readarray -t PL <<< $(grep -v "^#" ${inputFile} | cut -f7) # Platform information (optional)
+readarray -t PU <<< $(grep -v "^#" ${inputFile} | cut -f8) # Platform unit information (optional)
 ID=$(zcat ${seqFile1[SLURM_ARRAY_TASK_ID]} | head -n 1 | awk -F : '{OFS="."; print substr($1, 2, length($1)), $2, $3, $4}') # Hopefully unique identifier INSTRUMENT.RUN_ID.FLOWCELL.LANE.DNA_NUMBER. Information extracted from the fastq
 
 ## Check data and add defaults if needed
@@ -102,13 +102,13 @@ if [ -z "${Sample[SLURM_ARRAY_TASK_ID]}" || "${seqFile1[SLURM_ARRAY_TASK_ID]}" |
     R2 fastq file: ${seqFile2[SLURM_ARRAY_TASK_ID]}"
     exit 1
 fi
-if [ -z ${LB} ]; then
+if [ -z "${LB[SLURM_ARRAY_TASK_ID]}" ]; then
     LB="LC_WGS"
     echo "## INFO: Setting Library name to ${LB}."
 fi
-if [ -z ${PL} ]; then
+if [ -z "${PL[SLURM_ARRAY_TASK_ID]}" ]; then
     PL="ILLUMINA"
-    PU="HISEQX"
+    PU=$(zcat ${seqFile1[SLURM_ARRAY_TASK_ID]} | head -n 1 | awk -F : '{OFS="."; print $3, $4}') # FLOWCELL.LANE
     echo "## INFO: Setting platform to ${PL} and the platform unit to ${PU}. This is a guess but it doesn't affect your results."
 fi
 
@@ -120,7 +120,7 @@ if [ ! -d "${outDir}" ]; then
 fi
 
 tmpDir=${baseTmpDir}/${Sample[SLURM_ARRAY_TASK_ID]}
-if [ ! -d "${tmpDir}"]; then
+if [ ! -d "${tmpDir}" ]; then
     mkdir -p ${tmpDir}
 fi
 

@@ -70,7 +70,7 @@ fi
 
 source ${enviroCfg}
 
-Sample=$((grep -v "^#" ${sampleFile} | cut -f1))
+readarray -t Sample <<< $(grep -v "^#" ${sampleFile} | cut -f1)
 
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
     outDir="${userDir}/variants/SV/wisecondorx/"

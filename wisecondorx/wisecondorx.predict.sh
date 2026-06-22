@@ -85,8 +85,8 @@ if [ ! -f "${refFile}" ]; then # If no reference file exists then epic failure.
     exit 1
 fi
 
-Sample=$((grep -v "^#" ${sampleFile} | grep test | cut -f1))
-Sex=$((grep -v "^#" ${sampleFile} | grep test | cut -f3))
+readarray -t rSample <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f1)
+readarray -t Sex <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f3)
 
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
     outDir="${userDir}/variants/SV/wisecondorx/"

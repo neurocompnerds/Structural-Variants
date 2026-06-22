@@ -76,7 +76,7 @@ if [ ! -d "${baseTmpDir}" ]; then
 fi
 
 if [ -z "${outDir}" ]; then # If no output directory then set and create a default directory
-    outDir="${userDir}/variants/SV/wisecondorx/"
+    outDir="${userDir}/variants/SV/wisecondorx"
     echo "## INFO: Using ${outDir} as the output directory"
 fi
 if [ ! -d "${outDir}" ]; then
@@ -89,26 +89,26 @@ for dir in qc align wc cnvs; do
 done
 
 ## Make a file that just has the sample name, sample type and sex columns
-sampleFile=${outDir}/$(date +"[%Y%m%d]").wisecondorx.samples.txt
+sampleFile=${outDir}/$(date +"%Y%m%d").wisecondorx.samples.txt
 cut -f1,4,5 ${inputFile} | grep -v "^#" | sort | uniq > ${sampleFile}
-nSamples=$(wc -l ${sampleFile}) # Count the number of unique sample names in the input file to get the number of samples.
+nSamples=$(wc -l < ${sampleFile}) # Count the number of unique sample names in the input file to get the number of samples.
 nSampleTasks=$(($nSamples-1)) # Get the number of samples minus one for array job submission.
 nTestSamples=$(grep test ${sampleFile} | wc -l)
 nTestSampleTasks=$((${nTestSamples}-1))
-refFile=${outDir}/$(date +"[%Y%m%d]").wisecondorx.reference.npz
+refFile=${outDir}/$(date +"%Y%m%d").wisecondorx.reference.npz
 
 
 ## Launch the job chain ##
 # A wiseman, a con artist and two dorks walk into a bar.  The wiseman says "Myrrh! I should have seen that coming!" The con artist says "I'll sell you some snake oil to make you feel better" one the two dorks said "Ahhh my nuts!" and the other one laughed.
-mapJob=`sbatch --array=0-${nTasks} --export=ALL mapSort_alt_aware.sh -i ${inputFile} -c ${enviroCfg} -o ${outDir}` 
+mapJob=`sbatch --array=0-${nTasks} --export=ALL ${scriptDir}/wisecondorx/mapSort_alt_aware.sh -i ${inputFile} -c ${enviroCfg} -o ${outDir}` 
 mapJob=$(echo ${mapJob} | cut -d" " -f4)
-mergeJob=`sbatch --array=0-${nSampleTasks} --export=ALL mergeBam.sh --dependency=afterok:${mapJob} -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
+mergeJob=`sbatch --array=0-${nSampleTasks} --export=ALL ${scriptDir}/wisecondorx/mergeBam.sh --dependency=afterok:${mapJob} -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
 mergeJob=$(echo ${mergeJob} | cut -d" " -f4)
-mosdepthJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mergeJob} mosdepth.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
+mosdepthJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mergeJob} ${scriptDir}/wisecondorx/mosdepth.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
 mosdepthJob=$(echo ${mosdepthJob} | cut -d" " -f4)
-convertJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mergeJob} wisecondorx.convert.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
+convertJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mergeJob} ${scriptDir}/wisecondorx/wisecondorx.convert.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
 convertJob=$(echo ${convertJob} | cut -d" " -f4)
-newRefJob=`sbatch --export=ALL --dependency=afterok:${convertJob} wisecondorx.create.ref.sh -i ${sampleFile} -r ${refFile} -c ${enviroCfg} -o ${outDir}`
+newRefJob=`sbatch --export=ALL --dependency=afterok:${convertJob} ${scriptDir}/wisecondorx/wisecondorx.create.ref.sh -i ${sampleFile} -r ${refFile} -c ${enviroCfg} -o ${outDir}`
 newRefJob=$(echo ${newRefJob} | cut -d" " -f4)
-predictJob=`sbatch --array=0-${nTestSampleTasks} --export=ALL --dependency=afterok:${newRefJob} wisecondorx.predict.sh -i ${sampleFile} -r ${refFile} -c ${enviroCfg} -o ${outDir}`
+predictJob=`sbatch --array=0-${nTestSampleTasks} --export=ALL --dependency=afterok:${newRefJob} ${scriptDir}/wisecondorx/wisecondorx.predict.sh -i ${sampleFile} -r ${refFile} -c ${enviroCfg} -o ${outDir}`
 predictJob=$(echo ${predictJob} | cut -d" " -f4) # Placeholder until further development on the QC outputs

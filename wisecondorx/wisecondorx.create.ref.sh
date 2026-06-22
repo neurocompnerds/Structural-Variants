@@ -74,7 +74,7 @@ fi
 
 source ${enviroCfg}
 
-refSamples=$((grep -v "^#" ${sampleFile} | grep control | cut -f1 | sort | uniq)) 
+readarray -t refSamples <<< $(grep -v "^#" ${sampleFile} | grep control | cut -f1 | sort | uniq)
 if [ -z "${refFile}" ]; then # If no reference file name specified then set a default name
     refFile="${userDir}/variants/SV/wisecondorx/$(date +"[%Y%m%d]").wisecondorx.reference.npz"
     echo "## INFO: Using ${refFile} as the reference file name. You'll need to use this for the prediction step."

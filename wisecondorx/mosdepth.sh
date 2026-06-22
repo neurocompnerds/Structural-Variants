@@ -77,7 +77,7 @@ if [ -z "${outDir}" ]; then # If no output directory then use the default direct
 fi
 
 ## Parse the input file ##
-Sample=$((grep -v "^#" ${sampleFile} | cut -f1)) 
+readarray -t Sample <<< $(grep -v "^#" ${sampleFile} | cut -f1) 
 
 ## Create essential directories ##
 
