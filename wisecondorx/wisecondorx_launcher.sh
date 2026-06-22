@@ -88,7 +88,7 @@ for dir in qc align wc cnvs; do
     fi
 done
 
-## Make a file that just has the sample name and sample type columns
+## Make a file that just has the sample name, sample type and sex columns
 sampleFile=${outDir}/$(date +"[%Y%m%d]").wisecondorx.samples.txt
 cut -f1,4,5 ${inputFile} | grep -v "^#" | sort | uniq > ${sampleFile}
 nSamples=$(wc -l ${sampleFile}) # Count the number of unique sample names in the input file to get the number of samples.

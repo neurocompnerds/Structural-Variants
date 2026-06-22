@@ -90,4 +90,4 @@ if [ ! -d "${outDir}/qc" ]; then
 fi
 
 ## run mosdepth ##
-${mosdepthProg} ${outDir}/qc/${Sample[SLURM_ARRAY_TASK_ID]}.depth -n  -x -t 4 ${outDir}/${Sample[SLURM_ARRAY_TASK_ID]}.marked.sort.bwa.${Build}.bam
+${mosdepthProg} ${outDir}/qc/${Sample[SLURM_ARRAY_TASK_ID]}.depth -n  -x -t 4 ${outDir}/align/${Sample[SLURM_ARRAY_TASK_ID]}.marked.sort.bwa.${Build}.bam

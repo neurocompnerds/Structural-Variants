@@ -76,7 +76,7 @@ if [ -z "${Build}" ]; then # If Build is not in the config then let the user kno
     echo "## ERROR: Genome Build not specified in the config file.  Please check your config file and make sure the Build variable is set to one of the following: hs38DH, GRCh38_full_analysis_set, hs37d5, ucsc.hg19 or CHM13v2."
     exit 1
 else
-    test_genome_Build # This function is defined in the configs/ file and sets the variable genomeType to either "has_alt_contigs" or "no_alt_contigs" depending on the genome Build specified.
+    test_genome_build # This function is defined in the configs/ file and sets the variable genomeType to either "has_alt_contigs" or "no_alt_contigs" depending on the genome Build specified.
 fi
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
     outDir="${userDir}/variants/SV/wisecondorx/"

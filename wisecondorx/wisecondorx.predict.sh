@@ -93,9 +93,9 @@ if [ -z "${outDir}" ]; then # If no output directory then use the default direct
     echo "## INFO: Using ${outDir} as the output directory."
 fi
 
-if [ ! -d "${outDir}/cnv" ]; then
-    mkdir -p ${outDir}/cnv
-    echo "## INFO: Created the ${outDir}/cnv directory."
+if [ ! -d "${outDir}/cnvs" ]; then
+    mkdir -p ${outDir}/cnvs
+    echo "## INFO: Created the ${outDir}/cnvs directory."
 fi
 
 conda activate Wisecondorx

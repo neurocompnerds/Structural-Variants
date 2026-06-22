@@ -91,7 +91,7 @@ fi
 conda activate Wisecondorx
 wisecondorx newref \
 --yfrac 0.0025 \
-$(find ${outDir}/wc/ -name "*.merge.dedup.npz" | grep -w -E "$(echo ${refSamples} | tr ' ' '|')")
+$(find ${outDir}/wc/ -name "*.merge.dedup.npz" | grep -w -E "$(echo ${refSamples} | tr ' ' '|')") \
 ${refFile}
 
 conda deactivate
