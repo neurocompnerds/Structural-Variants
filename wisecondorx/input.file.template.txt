@@ -2,7 +2,8 @@
 # Read1: /path/to/read.R1.fastq.gz
 # Read2: /path/to/read.R2.fastq.gz
 # Sample_Type: For WISECONDORX analysis the sample is either "test" or "control"
+# Sex: The sample sex (note this may not always be determined by XY or XX) 
 # Library: Library for the BAM header (optional)
 # Platform: Platform for the BAM header (optional)
 # Platform_Unit: Platform unit for the BAM header (optional)
-#Sample Read1   Read2   Sample_Type Library Platform    Platform_Unit
+#Sample Read1   Read2   Sample_Type     Sex  Library Platform    Platform_Unit
