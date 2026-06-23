@@ -103,7 +103,7 @@ refFile=${outDir}/${dateString}.wisecondorx.reference.npz
 # A wiseman, a con artist and two dorks walk into a bar.  The wiseman says "Myrrh! I should have seen that coming!" The con artist says "I'll sell you some snake oil to make you feel better" one the two dorks said "Ahhh my nuts!" and the other one laughed.
 mapJob=`sbatch --array=0-${nTasks} --export=ALL ${scriptDir}/wisecondorx/mapSort_alt_aware.sh -i ${inputFile} -c ${enviroCfg} -o ${outDir}` 
 mapJob=$(echo ${mapJob} | cut -d" " -f4)
-mergeJob=`sbatch --array=0-${nSampleTasks} --export=ALL ${scriptDir}/wisecondorx/mergeBam.sh --dependency=afterok:${mapJob} -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
+mergeJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mapJob} ${scriptDir}/wisecondorx/mergeBam.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
 mergeJob=$(echo ${mergeJob} | cut -d" " -f4)
 mosdepthJob=`sbatch --array=0-${nSampleTasks} --export=ALL --dependency=afterok:${mergeJob} ${scriptDir}/wisecondorx/mosdepth.sh -i ${sampleFile} -c ${enviroCfg} -o ${outDir}`
 mosdepthJob=$(echo ${mosdepthJob} | cut -d" " -f4)
