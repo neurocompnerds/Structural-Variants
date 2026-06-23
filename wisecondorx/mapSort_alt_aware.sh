@@ -95,7 +95,7 @@ readarray -t PU <<< $(grep -v "^#" ${inputFile} | cut -f8) # Platform unit infor
 ID=$(zcat ${seqFile1[SLURM_ARRAY_TASK_ID]} | head -n 1 | awk -F : '{OFS="."; print substr($1, 2, length($1)), $2, $3, $4}') # Hopefully unique identifier INSTRUMENT.RUN_ID.FLOWCELL.LANE.DNA_NUMBER. Information extracted from the fastq
 
 ## Check data and add defaults if needed
-if [ -z "${Sample[SLURM_ARRAY_TASK_ID]}" || "${seqFile1[SLURM_ARRAY_TASK_ID]}" || "${seqFile2[SLURM_ARRAY_TASK_ID]}" ]; then # If the Sample or fastq are not specified that's a hard fail
+if [ -z "${Sample[SLURM_ARRAY_TASK_ID]}" ] || [ -z "${seqFile1[SLURM_ARRAY_TASK_ID]}" ] || [ -z "${seqFile2[SLURM_ARRAY_TASK_ID]}" ]; then # If the Sample or fastq are not specified that's a hard fail
     echo "## ERROR: Missing Sample name or fastq file.  Please check your input file and ensure these are specified
     Sample: ${Sample[SLURM_ARRAY_TASK_ID]}
     R1 fastq file: ${seqFile1[SLURM_ARRAY_TASK_ID]}
@@ -109,7 +109,7 @@ fi
 if [ -z "${PL[SLURM_ARRAY_TASK_ID]}" ]; then
     PL="ILLUMINA"
     PU=$(zcat ${seqFile1[SLURM_ARRAY_TASK_ID]} | head -n 1 | awk -F : '{OFS="."; print $3, $4}') # FLOWCELL.LANE
-    echo "## INFO: Setting platform to ${PL} and the platform unit to ${PU}. This is a guess but it doesn't affect your results."
+    echo "## INFO: Setting platform to ${PL} and the platform unit to ${PU}."
 fi
 
 ## Create essential directories ##
@@ -135,6 +135,6 @@ done
 # -K flag asks bwa-mem to load a fixed number of bases into RAM so enables reproducibility
  
 cd ${tmpDir}
-bwa mem -K 100000000 -t 24 -R "@RG\tID:${ID}\tLB:${LB[SLURM_ARRAY_TASK_ID]}\tPL:${PL}\tSM:${Sample[SLURM_ARRAY_TASK_ID]}" ${BWAindex} ${seqFile1[SLURM_ARRAY_TASK_ID]} ${seqFile2[SLURM_ARRAY_TASK_ID]} |\
+bwa mem -K 100000000 -t 24 -R "@RG\tID:${ID}\tLB:${LB[SLURM_ARRAY_TASK_ID]}\tPL:${PL}\tPU:${PU}\tSM:${Sample[SLURM_ARRAY_TASK_ID]}" ${BWAindex} ${seqFile1[SLURM_ARRAY_TASK_ID]} ${seqFile2[SLURM_ARRAY_TASK_ID]} |\
 samtools view -bT ${BWAindex} - |\
 samtools sort -l 5 -m 4G -@24 -T ${Sample[SLURM_ARRAY_TASK_ID]} -o ${tmpDir}/${Sample[SLURM_ARRAY_TASK_ID]}.${ID}.samsort.bwa.${Build}.bam -
