@@ -89,7 +89,7 @@ readarray -t rSample <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f1)
 readarray -t Sex <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f3)
 
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
-    outDir="${userDir}/variants/SV/wisecondorx/"
+    outDir=${userDir}/variants/SV/wisecondorx
     echo "## INFO: Using ${outDir} as the output directory."
 fi
 

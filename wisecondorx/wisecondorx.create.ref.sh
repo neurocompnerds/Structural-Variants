@@ -76,11 +76,11 @@ source ${enviroCfg}
 
 readarray -t refSamples <<< $(grep -v "^#" ${sampleFile} | grep control | cut -f1 | sort | uniq)
 if [ -z "${refFile}" ]; then # If no reference file name specified then set a default name
-    refFile="${userDir}/variants/SV/wisecondorx/$(date +"[%Y%m%d]").wisecondorx.reference.npz"
+    refFile=${userDir}/variants/SV/wisecondorx/$(date +"%Y%m%d_%H%M%S").wisecondorx.reference.npz
     echo "## INFO: Using ${refFile} as the reference file name. You'll need to use this for the prediction step."
 fi
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
-    outDir="${userDir}/variants/SV/wisecondorx/"
+    outDir=${userDir}/variants/SV/wisecondorx
     echo "## INFO: Using ${outDir} as the output directory"
 fi
 if [ ! -d "${outDir}/wc" ]; then

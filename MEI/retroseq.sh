@@ -27,7 +27,7 @@ echo "# Script for identifying retrotransposed elements in an aligned Genome usi
 # Options
 # -b    REQUIRED. List of bam files to call, in a text file with the full path to the bam file provided.
 # -a	OPTIONAL. Equivalent to RetroSeq -id option (NOTE: program default is 90 but default for this script is 80)
-# -o    OPTIONAL. Path to where you want to find your file output (if not specified /cratchdata1/users/${USER}/retroseq is used)
+# -o    OPTIONAL. Path to where you want to find your file output (if not specified /scratchdata1/users/${USER}/retroseq is used)
 # -c    OPTIONAL. Path to a RetroSeq config file (if not specified hs38DH.retroseq.phoenix.cfg is used)
 # -h or --help  Prints this message.  Or if you got one of the options above wrong you'll be reading this too!
 #

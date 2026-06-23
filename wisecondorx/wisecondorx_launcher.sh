@@ -89,13 +89,14 @@ for dir in qc align wc cnvs; do
 done
 
 ## Make a file that just has the sample name, sample type and sex columns
-sampleFile=${outDir}/$(date +"%Y%m%d").wisecondorx.samples.txt
+dateString=$(date +"%Y%m%d_%H%M%S")
+sampleFile=${outDir}/${dateString}.wisecondorx.samples.txt
 cut -f1,4,5 ${inputFile} | grep -v "^#" | sort | uniq > ${sampleFile}
 nSamples=$(wc -l < ${sampleFile}) # Count the number of unique sample names in the input file to get the number of samples.
 nSampleTasks=$(($nSamples-1)) # Get the number of samples minus one for array job submission.
 nTestSamples=$(grep test ${sampleFile} | wc -l)
 nTestSampleTasks=$((${nTestSamples}-1))
-refFile=${outDir}/$(date +"%Y%m%d").wisecondorx.reference.npz
+refFile=${outDir}/${dateString}.wisecondorx.reference.npz
 
 
 ## Launch the job chain ##
