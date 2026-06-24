@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J goamogogoamo
+#SBATCH -J GoGoaMo
 #SBATCH -o /hpcfs/users/%u/log/mosdepth-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
