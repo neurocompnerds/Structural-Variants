@@ -77,7 +77,7 @@ fi
 source ${enviroCfg}
 
 tmpDir=${baseTmpDir}/${Sample[SLURM_ARRAY_TASK_ID]}
-if [ ! -d "${tmpDir}"]; then
+if [ ! -d "${tmpDir}" ]; then
     echo "## ERROR: The temporary directory ${tmpDir} does not exist.  This should have been created in the mapping step.  Please check your log files for errors."
     exit 1
 fi
