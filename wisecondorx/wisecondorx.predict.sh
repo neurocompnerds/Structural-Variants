@@ -98,7 +98,7 @@ if [ ! -d "${outDir}/cnvs" ]; then
     echo "## INFO: Created the ${outDir}/cnvs directory."
 fi
 
-conda activate Wisecondorx
+conda activate WisecondorX
 wisecondorx predict \
 --plot \
 --add-plot-title  \

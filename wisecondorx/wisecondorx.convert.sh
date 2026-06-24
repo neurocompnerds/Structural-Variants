@@ -86,7 +86,7 @@ if [ ! -d "${outDir}/wc" ]; then
 fi
 
 ## Create npz arrays from the BAM files ##
-conda activate Wisecondorx
+conda activate WisecondorX
 wisecondorx convert \
     ${outDir}/align/${Sample[SLURM_ARRAY_TASK_ID]}.marked.sort.bwa.${Build}.bam \
     ${outDir}/wc/${Sample[SLURM_ARRAY_TASK_ID]}.merge.dedup.npz \

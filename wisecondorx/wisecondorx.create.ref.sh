@@ -88,7 +88,7 @@ if [ ! -d "${outDir}/wc" ]; then
     exit 1
 fi
 
-conda activate Wisecondorx
+conda activate WisecondorX
 wisecondorx newref \
 --yfrac 0.0025 \
 $(find ${outDir}/wc/ -name "*.merge.dedup.npz" | grep -w -E "$(echo ${refSamples} | tr ' ' '|')") \
