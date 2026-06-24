@@ -89,6 +89,5 @@ fi
 conda activate WisecondorX
 wisecondorx convert \
     ${outDir}/align/${Sample[SLURM_ARRAY_TASK_ID]}.marked.sort.bwa.${Build}.bam \
-    ${outDir}/wc/${Sample[SLURM_ARRAY_TASK_ID]}.merge.dedup.npz \
-    --threads ${SLURM_NTASKS}
+    ${outDir}/wc/${Sample[SLURM_ARRAY_TASK_ID]}.merge.dedup.npz
 conda deactivate

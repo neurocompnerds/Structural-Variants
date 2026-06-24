@@ -98,12 +98,19 @@ if [ ! -d "${outDir}/cnvs" ]; then
     echo "## INFO: Created the ${outDir}/cnvs directory."
 fi
 
+# Check if gender is either M or F and if not set a flag to not include gender in the prediction step.  WisecondorX will throw an error if you
+if [[ ${Sex[SLURM_ARRAY_TASK_ID]} != "M" && ${Sex[SLURM_ARRAY_TASK_ID]} != "F" ]]; then
+    GenderFlag=""
+else
+    GenderFlag="--gender ${Sex[SLURM_ARRAY_TASK_ID]}"
+fi
+
 conda activate WisecondorX
 wisecondorx predict \
 --plot \
 --add-plot-title  \
---bed \
---gender ${Sex[SLURM_ARRAY_TASK_ID]} \
+--bed ${GenderFlag} \
+--blacklist ${Blacklist} \
 ${outDir}/wc/${Sample[SLURM_ARRAY_TASK_ID]}.merge.dedup.npz \
 ${refFile} \
 ${outDir}/cnvs/${Sample[SLURM_ARRAY_TASK_ID]}

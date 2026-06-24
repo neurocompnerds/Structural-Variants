@@ -3,7 +3,7 @@
 #SBATCH -o /hpcfs/users/%u/log/WC-newref-slurm-%j.out
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
-#SBATCH -n 2
+#SBATCH -n 16
 #SBATCH --time=06:00:00
 #SBATCH --mem=128GB
 
@@ -91,6 +91,7 @@ fi
 conda activate WisecondorX
 wisecondorx newref \
 --yfrac 0.0025 \
+--cpus ${SLURM_NTASKS} \
 $(find ${outDir}/wc/ -name "*.merge.dedup.npz" | grep -w -E "$(echo ${refSamples} | tr ' ' '|')") \
 ${refFile}
 
