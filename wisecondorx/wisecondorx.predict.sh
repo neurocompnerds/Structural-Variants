@@ -4,8 +4,8 @@
 #SBATCH -p icelake,a100cpu
 #SBATCH -N 1
 #SBATCH -n 2
-#SBATCH --time=00:10:00
-#SBATCH --mem=4GB
+#SBATCH --time=00:30:00
+#SBATCH --mem=16GB
 
 # Notification Configuration 
 #SBATCH --mail-type=END                                         
@@ -85,7 +85,7 @@ if [ ! -f "${refFile}" ]; then # If no reference file exists then epic failure.
     exit 1
 fi
 
-readarray -t rSample <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f1)
+readarray -t Sample <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f1)
 readarray -t Sex <<< $(grep -v "^#" ${sampleFile} | grep test | cut -f3)
 
 if [ -z "${outDir}" ]; then # If no output directory then use the default directory
