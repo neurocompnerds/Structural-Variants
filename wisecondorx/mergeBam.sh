@@ -105,6 +105,7 @@ for mod in "${modList[@]}"; do
 done
 
 ## Mark duplicates ##
+echo "## INFO: Marking duplicates and merging ${Sample[SLURM_ARRAY_TASK_ID]}"
 ${sambambaProg} markdup \
     -t 24 \
     -l 5 \
